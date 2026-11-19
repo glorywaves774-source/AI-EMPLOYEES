@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Platform Administration · AI Workforce{% endblock %}
+{% block content %}
+<div class="auth-wrap"><section class="auth-card"><p class="eyebrow">KAYRON GLOBAL TECH SERVICES</p><h1>Platform administration</h1><p class="muted">Authorized platform administrators only.</p>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Email<input type="email" name="email" required autocomplete="username"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="primary" type="submit">Sign in</button></form></section></div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Subscription & Billing · AI Workforce{% endblock %}
+{% block content %}
+<section class="page-heading"><div><p class="eyebrow">SAAS BILLING CENTRE</p><h1>Subscription & billing</h1><p class="muted">Manage your AI Workforce plan, usage, payments and invoices.</p></div></section>
+{% if subscription %}
+<section class="metric-grid">
+<article class="metric-card"><span>Current plan</span><strong>{{ subscription.plan.name }}</strong><small>{{ subscription.status|capitalize }}</small></article>
+<article class="metric-card"><span>AI employees</span><strong>{{ subscription.plan.max_ai_employees }}</strong><small>Maximum active employees</small></article>
+<article class="metric-card"><span>Task quota</span><strong>{{ "{:,}".format(usage) }}</strong><small>of {{ "{:,}".format(subscription.plan.monthly_task_limit) }} this period</small></article>
+<article class="metric-card"><span>Trial / period ends</span><strong>{{ (subscription.trial_ends_at or subscription.current_period_end).strftime("%d %b %Y") if (subscription.trial_ends_at or subscription.current_period_end) else "—" }}</strong><small>{{ subscription.provider|capitalize }}</small></article>
+</section>
+{% endif %}
+{% if subscription and subscription.status in ["trialing","active"] %}
+<section class="panel subscription-actions"><h2>Subscription controls</h2><p class="muted">{% if subscription.cancel_at_period_end %}Cancellation is scheduled for the end of this period.{% else %}Your subscription renews through the configured payment provider after successful billing.{% endif %}</p>
+{% if subscription.cancel_at_period_end %}<form method="post" action="{{ url_for('billing.resume') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" type="submit">Resume subscription</button></form>
+{% else %}<form method="post" action="{{ url_for('billing.cancel') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger" type="submit">Cancel at period end</button></form>{% endif %}</section>
+{% endif %}
+<section class="billing-plan-grid">
+{% for plan in plans %}
+<article class="billing-plan {% if subscription and subscription.plan_id == plan.id %}current{% endif %}">
+<p class="eyebrow">{{ plan.name|upper }}</p><h2>{{ plan.name }}</h2><p class="muted">{{ plan.description }}</p>
+<div class="price">{% if plan.amount|float > 0 %}{{ plan.currency }} {{ "%.2f"|format(plan.amount|float) }}<small>/month</small>{% else %}<span>Configurable</span><small>via platform admin</small>{% endif %}</div>
+<ul><li>Up to {{ plan.max_ai_employees }} active AI employees</li><li>{{ "{:,}".format(plan.monthly_task_limit) }} tasks per billing period</li><li>{{ plan.trial_days }}-day initial trial</li></ul>
+{% if subscription and subscription.plan_id == plan.id %}<span class="current-badge">Current plan</span>{% else %}
+<form method="post" action="{{ url_for('billing.subscribe', plan_id=plan.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Payment provider<select name="provider"><option value="paystack">Paystack</option><option value="stripe">Stripe</option></select></label>
+<button class="primary" type="submit">Choose plan</button>
+</form>{% endif %}
+</article>
+{% endfor %}
+</section>
+<section class="analytics-grid">
+<article class="panel"><h2>Payment history</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Provider</th><th>Reference</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+{% for p in payments %}<tr><td>{{ p.created_at.strftime("%d %b %Y") }}</td><td>{{ p.provider|capitalize }}</td><td>{{ p.provider_reference[:20] }}</td><td>{{ p.currency }} {{ "%.2f"|format(p.amount|float) }}</td><td>{{ p.status }}</td></tr>{% else %}<tr><td colspan="5">No payment records yet.</td></tr>{% endfor %}
+</tbody></table></div></article>
+<article class="panel"><h2>Invoices</h2><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Period</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+{% for inv in invoices %}<tr><td>{{ inv.invoice_number }}</td><td>{{ inv.period_start.strftime("%d %b") if inv.period_start else "—" }}{% if inv.period_end %} – {{ inv.period_end.strftime("%d %b %Y") }}{% endif %}</td><td>{{ inv.currency }} {{ "%.2f"|format(inv.amount|float) }}</td><td>{{ inv.status }}</td></tr>{% else %}<tr><td colspan="4">No invoices yet.</td></tr>{% endfor %}
+</tbody></table></div></article>
+</section>
+{% endblock %}

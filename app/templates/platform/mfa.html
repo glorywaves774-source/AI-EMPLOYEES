@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="max-width:520px;margin:3rem auto;">
+  <h1>Platform Administrator MFA</h1>
+  <p>Enter the six-digit code from your authenticator application.</p>
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="code">Authentication code</label>
+    <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required maxlength="12">
+    <button type="submit">Continue</button>
+  </form>
+</div>
+{% endblock %}

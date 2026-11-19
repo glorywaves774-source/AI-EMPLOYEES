@@ -1,0 +1,15 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+instance/
+.pytest_cache/
+.mypy_cache/
+.coverage
+dist/
+build/
+*.db
+
+# Database backups may contain customer data.
+backups/

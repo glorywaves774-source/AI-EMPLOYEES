@@ -1,0 +1,16 @@
+# AI Workforce database migrations
+
+The migration chain begins with a frozen schema snapshot (`0001_initial`) followed by incremental revisions (`0002_team_orchestration`, `0003_team_execution_steps`, `0004_review_recovery_controls`). The baseline intentionally does not import application models or call `metadata.create_all()`. Do not edit deployed revisions.
+
+Production deployment:
+
+    flask --app run.py db current
+    flask --app run.py db upgrade
+    flask --app run.py db current
+
+After changing SQLAlchemy models, generate a new revision:
+
+    flask --app run.py db migrate -m "describe change"
+    flask --app run.py db upgrade
+
+Review generated operations, test them against a disposable database, and rehearse against a PostgreSQL staging copy before production. Back up production first. Do not use `db.create_all()` to manage production schema changes.

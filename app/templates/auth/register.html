@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Create business workspace · AI Workforce{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">KAYRON GLOBAL TECH SERVICES</p>
+  <h1>Create your AI workforce</h1>
+  <p class="muted">Register your business and establish its private workspace.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Full name<input name="full_name" autocomplete="name" required></label>
+    <label>Work email<input type="email" name="email" autocomplete="email" required></label>
+    <label>Business name<input name="business_name" required></label>
+    <label>Password <small>(at least 12 characters)</small><input type="password" name="password" minlength="12" autocomplete="new-password" required></label>
+    <button class="primary" type="submit">Create workspace</button>
+  </form>
+  <p class="muted">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+</section>
+{% endblock %}

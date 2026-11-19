@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Workforce Analytics · AI Workforce{% endblock %}
+{% block content %}
+<section class="page-heading"><div><p class="eyebrow">OPERATIONS INTELLIGENCE</p><h1>Workforce analytics</h1><p class="muted">Tenant-scoped reporting on task delivery, AI activity and knowledge operations.</p></div><a class="button" href="{{ url_for('analytics.export_csv', days=report.days) }}">Export CSV</a></section>
+<nav class="filter-tabs" aria-label="Reporting period">{% for period in [7,30,90,365] %}<a class="{% if report.days == period %}selected{% endif %}" href="{{ url_for('analytics.index', days=period) }}">{{ period }} days</a>{% endfor %}</nav>
+<section class="metric-grid">
+<article class="metric-card"><span>Tasks created</span><strong>{{ report.total_tasks }}</strong><small>{{ report.completion_rate }}% completed</small></article>
+<article class="metric-card"><span>Completed</span><strong>{{ report.completed }}</strong><small>Successful task records</small></article>
+<article class="metric-card"><span>Failed</span><strong>{{ report.failed }}</strong><small>Tasks needing review</small></article>
+<article class="metric-card"><span>Queued / running</span><strong>{{ report.queued }}</strong><small>Not yet completed</small></article></section>
+<section class="analytics-grid"><article class="panel"><h2>AI usage</h2>
+{% for label,value in [('Agent runs',report.run_count),('Input tokens',report.input_tokens),('Output tokens',report.output_tokens),('Total tokens',report.total_tokens)] %}<div class="usage-line"><span>{{ label }}</span><strong>{{ "{:,}".format(value) }}</strong></div>{% endfor %}
+{% if report.cost_configured %}<div class="usage-line"><span>Estimated API cost</span><strong>${{ "%.4f"|format(report.estimated_cost) }}</strong></div><p class="muted note">Estimate uses configured per-million-token rates; provider invoices are authoritative.</p>{% else %}<p class="muted note">Cost estimate is disabled until model-specific rates are configured.</p>{% endif %}</article>
+<article class="panel"><h2>Workforce health</h2><div class="usage-line"><span>Active AI employees</span><strong>{{ report.active_employees }}</strong></div><div class="usage-line"><span>Pending approvals</span><strong>{{ report.pending_approvals }}</strong></div><div class="usage-line"><span>Knowledge documents</span><strong>{{ report.documents }}</strong></div><p class="muted note">Approval and document totals are current snapshots.</p></article></section>
+<section class="panel"><h2>AI employee activity</h2>{% if report.employee_rows %}<div class="table-wrap"><table><thead><tr><th>AI employee</th><th>Runs</th><th>Completed</th><th>Input tokens</th><th>Output tokens</th></tr></thead><tbody>{% for row in report.employee_rows %}<tr><td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] or 0 }}</td><td>{{ "{:,}".format(row[3] or 0) }}</td><td>{{ "{:,}".format(row[4] or 0) }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="muted">No AI employee runs recorded in this period.</p>{% endif %}</section>
+{% endblock %}

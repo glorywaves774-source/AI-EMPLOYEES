@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<h1>Multi-factor authentication</h1><p>Enter the code from your authenticator app or a recovery code.</p><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="code" required autocomplete="one-time-code"><button type="submit">Verify</button></form>{% endblock %}

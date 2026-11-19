@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sign in · AI Workforce{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">KAYRON GLOBAL TECH SERVICES</p>
+  <h1>Welcome back</h1>
+  <p class="muted">Sign in to your business workspace.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Work email<input type="email" name="email" autocomplete="email" required></label>
+    <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+    <button class="primary" type="submit">Sign in</button>
+  </form>
+  <p class="muted">New to AI Workforce? <a href="{{ url_for('auth.register') }}">Create a workspace</a></p>
+</section>
+{% endblock %}
