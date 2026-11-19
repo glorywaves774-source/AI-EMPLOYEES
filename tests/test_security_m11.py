@@ -40,6 +40,8 @@ class SecurityMilestoneTests(unittest.TestCase):
             db.session.flush()
             db.session.add(TenantMembership(user_id=self.user.id, tenant_id=self.tenant.id, role="owner"))
             db.session.commit()
+            self.user_id = self.user.id
+            self.user_email = self.user.email
 
     def tearDown(self):
         with self.app.app_context():
@@ -60,19 +62,19 @@ class SecurityMilestoneTests(unittest.TestCase):
 
     def test_login_lockout_after_configured_failures(self):
         for _ in range(3):
-            response = self.client.post("/auth/login", data={"email": self.user.email, "password": "wrong-password"})
+            response = self.client.post("/auth/login", data={"email": self.user_email, "password": "wrong-password"})
             self.assertEqual(response.status_code, 200)
         with self.app.app_context():
-            user = db.session.get(User, self.user.id)
+            user = db.session.get(User, self.user_id)
             self.assertIsNotNone(user.locked_until)
-        response = self.client.post("/auth/login", data={"email": self.user.email, "password": "correct-password-123"})
+        response = self.client.post("/auth/login", data={"email": self.user_email, "password": "correct-password-123"})
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"temporarily locked", response.data)
 
     def test_password_reset_token_is_hashed_and_single_use(self):
         with self.app.app_context():
             raw = "one-time-reset-token"
-            db.session.add(SecurityToken(user_id=self.user.id, token_hash=hash_token(raw),
+            db.session.add(SecurityToken(user_id=self.user_id, token_hash=hash_token(raw),
                                           token_type="password_reset",
                                           expires_at=datetime.now(timezone.utc) + timedelta(minutes=30)))
             db.session.commit()

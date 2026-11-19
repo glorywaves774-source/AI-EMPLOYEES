@@ -16,6 +16,11 @@ class SmokeTests(unittest.TestCase):
             SESSION_COOKIE_SECURE = False
             SESSION_COOKIE_SAMESITE = "Lax"
             WTF_CSRF_ENABLED = False
+            CELERY_BROKER_URL = "memory://"
+            CELERY_RESULT_BACKEND = "cache+memory://"
+            RATELIMIT_STORAGE_URI = "memory://"
+            PUBLIC_BASE_URL = "http://localhost"
+            SMTP_HOST = None
         self.app = create_app(TestConfig)
         self.client = self.app.test_client()
         with self.app.app_context():
