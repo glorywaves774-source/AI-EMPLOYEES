@@ -82,8 +82,23 @@ On [[page:knowledge]] you upload your own documents so AI employees can use them
 - **Search** finds matching passages across documents. Each document has **Download** and **Delete** (delete is permanent and removes its searchable text).
 - Owners, Admins and Managers create repositories, upload and set access; only Owners and Admins delete.
 
-## Integrations
-[[page:integrations]] shows Google Drive and Business Email. Live connections are not available yet. An Owner or Admin can tap **Request setup** to register interest; nothing is connected and no data leaves the app.
+## Integrations (Google Drive)
+On [[page:integrations]] you can bring files from Google Drive into the knowledge library. AI Workforce can only open the files you pick with Google's file picker, never the rest of your Drive.
+**Connect (Owner or Admin):**
+1. Open [[page:integrations]] and tap **Connect Google Drive**.
+2. Choose your Google account and allow access to "files you choose" on Google's screen.
+3. You return to the page, which now shows **connected** and the Google account.
+**Import files (Owner, Admin or Manager):**
+1. Create a knowledge folder first on [[page:knowledge]] if you have none.
+2. On [[page:integrations]], pick the folder under **Import into knowledge folder**.
+3. Tap **Import from Google Drive**, select up to 10 files in Google's picker and confirm.
+4. The page lists what was imported and what wasn't (with the reason). Then grant AI employees access to that folder, as with uploads.
+- Supported: PDF, Word (.docx), text, Markdown, CSV, and Google Docs (imported as Word), Sheets (first sheet as CSV) and Slides (as text). Up to 12 MB each.
+- Imported files are copies: later changes in Drive don't update them — import again to refresh.
+- **Disconnect Google Drive** (Owner or Admin) removes the connection; files already imported stay.
+- If the card says **not available yet**, the platform owner hasn't finished the Google setup; an Owner or Admin can tap **Request setup** to register interest.
+- "Google refused access" or "connection has expired": tap **Disconnect Google Drive**, then **Connect Google Drive** again.
+Business Email is not available yet; an Owner or Admin can tap **Request setup** on its card to register interest.
 
 ## Analytics
 [[page:analytics]] (Owners, Admins, Managers) shows, for the last 7, 30, 90 or 365 days: tasks created, completed, failed, queued/running; AI usage and estimated AI cost; workforce health (active AI employees, pending approvals, knowledge documents); and each AI employee's activity. The export button downloads the figures as a CSV file for Excel or Google Sheets.

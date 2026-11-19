@@ -412,3 +412,13 @@ td select { width: auto; margin: 0; padding: 8px 10px; }
   .container { padding: 0; max-width: none; }
   a { color: #000; text-decoration: underline; }
 }
+
+/* ---------- Google Drive import ---------- */
+.drive-import { margin-top: 10px; }
+.drive-import label { margin: 8px 0 4px; }
+.drive-import .primary { margin-top: 12px; }
+.drive-result:empty { display: none; }
+.drive-result { margin-top: 12px; }
+.drive-list { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; font-size: 14.5px; }
+.drive-error { color: var(--bad-text); }
+.drive-disconnect { margin-top: 14px; }
