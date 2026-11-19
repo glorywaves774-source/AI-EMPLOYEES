@@ -184,11 +184,16 @@ def create_app(config_class=Config):
         count = process_subscription_expirations()
         print(f"Expired {count} subscription(s).")
 
+    # Health probes are exempt from rate limiting: Render's checker polls every
+    # few seconds from one internal IP, which exceeds the default per-IP limit
+    # and would get the service marked unhealthy (502 for every visitor).
     @app.get("/healthz")
+    @limiter.exempt
     def healthz():
         return jsonify({"status": "ok", "service": "ai-workforce"})
 
     @app.get("/readyz")
+    @limiter.exempt
     def readyz():
         checks = {"database": "ok"}
         try:
