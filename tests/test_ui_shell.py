@@ -73,6 +73,15 @@ class UiShellTests(unittest.TestCase):
         if csp:
             self.assertNotIn("'unsafe-inline'", csp.split("script-src")[1].split(";")[0])
 
+    def test_templates_have_no_inline_event_handlers(self):
+        # CSP script-src 'self' silently blocks onclick=/onchange= etc.
+        import pathlib
+        offenders = []
+        for f in pathlib.Path(self.app.root_path, "templates").rglob("*.html"):
+            for m in re.finditer(r"\son[a-z]+\s*=\s*[\"']", f.read_text()):
+                offenders.append(f"{f.name}: {m.group(0).strip()}")
+        self.assertEqual(offenders, [])
+
     def test_static_assets_are_served(self):
         for asset in ("css/app.css", "css/mobile.css", "js/theme.js", "js/ui.js"):
             r = self.client.get(f"/static/{asset}")
