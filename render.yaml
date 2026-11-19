@@ -1,6 +1,7 @@
 services:
   - type: web
     name: ai-workforce
+    region: frankfurt
     runtime: python
     buildCommand: pip install -r requirements.txt
     preDeployCommand: flask --app run.py db upgrade
@@ -74,6 +75,7 @@ services:
 
   - type: worker
     name: ai-workforce-worker
+    region: frankfurt
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: python scripts/production_check.py && celery -A worker.celery worker --loglevel=INFO --concurrency=2
@@ -122,12 +124,14 @@ services:
           property: connectionString
   - type: redis
     name: ai-workforce-redis
+    region: frankfurt
     plan: starter
     ipAllowList: []  # internal connections only, from this workspace's services
     maxmemoryPolicy: noeviction  # Redis is the Celery broker; eviction would silently drop queued tasks
 
   - type: cron
     name: ai-workforce-expiry-job
+    region: frankfurt
     runtime: python
     schedule: "0 * * * *"
     buildCommand: pip install -r requirements.txt
@@ -149,6 +153,7 @@ services:
 
   - type: cron
     name: ai-workforce-security-retention
+    region: frankfurt
     runtime: python
     schedule: "30 2 * * *"
     buildCommand: pip install -r requirements.txt
@@ -170,5 +175,6 @@ services:
 
 databases:
   - name: ai-workforce-db
+    region: frankfurt
     databaseName: ai_workforce
     user: ai_workforce
