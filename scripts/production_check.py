@@ -6,9 +6,14 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Running `python scripts/production_check.py` puts scripts/ (not the project
+# root) on sys.path, so `from app import ...` would fail without this.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 def validate_environment(environ=None):
