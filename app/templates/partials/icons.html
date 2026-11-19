@@ -1,0 +1,16 @@
+{#- Small stroke icons (inline SVG — allowed by the CSP; no scripts). -#}
+{% macro icon(name, cls='ic') -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+{%- if name == 'home' -%}<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/>
+{%- elif name == 'approvals' -%}<path d="M9 11.5l2.2 2.2L15.5 9"/><rect x="3.5" y="3.5" width="17" height="17" rx="4"/>
+{%- elif name == 'knowledge' -%}<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7.5h8M8 11h6"/>
+{%- elif name == 'integrations' -%}<path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/>
+{%- elif name == 'analytics' -%}<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+{%- elif name == 'billing' -%}<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19M6.5 15h4"/>
+{%- elif name == 'menu' -%}<path d="M4 7h16M4 12h16M4 17h16"/>
+{%- elif name == 'close' -%}<path d="M6 6l12 12M18 6 6 18"/>
+{%- elif name == 'moon' -%}<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>
+{%- elif name == 'sun' -%}<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}

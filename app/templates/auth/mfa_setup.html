@@ -1,17 +1,21 @@
 {% extends "base.html" %}
+{% block title %}Two-step verification · AI Workforce{% endblock %}
 {% block content %}
-<h1>Set up MFA</h1>
-{% if secret %}
-<p>Enter this secret into your authenticator application:</p>
-<p><code>{{ secret }}</code></p>
-<form method="post">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label>Current authenticator code</label>
-  <input name="code" inputmode="numeric" autocomplete="one-time-code" required>
-  <button type="submit">Confirm and enable MFA</button>
-</form>
-{% else %}
-<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Start MFA setup</button></form>
-{% endif %}
-{% if codes %}<h2>Recovery codes</h2><p>Store these securely. They are shown only during setup.</p><ul>{% for c in codes %}<li><code>{{ c }}</code></li>{% endfor %}</ul>{% endif %}
+<div class="auth-wrap"><section class="auth-card">
+  <p class="eyebrow">ACCOUNT SECURITY</p>
+  <h1>Set up two-step verification</h1>
+  {% if secret %}
+  <p class="muted">In your authenticator app, choose <strong>Enter a setup key</strong> and type this key:</p>
+  <p><code>{{ secret }}</code></p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Current authenticator code<input name="code" inputmode="numeric" autocomplete="one-time-code" required></label>
+    <button class="primary" type="submit">Confirm and turn on</button>
+  </form>
+  {% else %}
+  <p class="muted">Protect your account with a code from an authenticator app each time you sign in.</p>
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="primary" type="submit">Start setup</button></form>
+  {% endif %}
+  {% if codes %}<h2>Recovery codes</h2><p class="muted">Store these somewhere safe. Each works once, and they are shown only now.</p><ul class="code-list">{% for c in codes %}<li><code>{{ c }}</code></li>{% endfor %}</ul>{% endif %}
+</section></div>
 {% endblock %}

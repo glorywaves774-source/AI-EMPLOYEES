@@ -2,25 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#eef2fa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#060c18" media="(prefers-color-scheme: dark)">
   <title>{% block title %}AI Workforce{% endblock %}</title>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+  <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
 </head>
-<body>
+{%- from 'partials/icons.html' import icon -%}
+{%- set ep = request.endpoint or '' -%}
+{%- set tenant_nav = current_user.is_authenticated and request.blueprint != 'platform' -%}
+{%- set nav = [
+  ('workspace.dashboard', 'Home', 'home', ['workspace.dashboard', 'workforce.task_detail']),
+  ('approvals.index', 'Approvals', 'approvals', ['approvals.index']),
+  ('knowledge.index', 'Knowledge', 'knowledge', ['knowledge.index', 'knowledge.permissions', 'knowledge.search']),
+  ('knowledge.integrations', 'Integrations', 'integrations', ['knowledge.integrations']),
+  ('analytics.index', 'Analytics', 'analytics', ['analytics.index']),
+  ('billing.index', 'Billing', 'billing', ['billing.index']),
+] -%}
+{%- set tabs = ['workspace.dashboard', 'approvals.index', 'knowledge.index', 'analytics.index'] -%}
+<body class="{% if tenant_nav %}has-tabbar{% endif %}">
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
   <header class="topbar">
-    <div class="nav-left"><a class="brand" href="{{ url_for('workspace.dashboard') }}">AI <span>Workforce</span></a>{% if current_user.is_authenticated %}<a class="nav-link" href="{{ url_for('approvals.index') }}">Approvals</a><a class="nav-link" href="{{ url_for('knowledge.index') }}">Knowledge</a><a class="nav-link" href="{{ url_for('knowledge.integrations') }}">Integrations</a><a class="nav-link" href="{{ url_for('analytics.index') }}">Analytics</a><a class="nav-link" href="{{ url_for('billing.index') }}">Billing</a>{% endif %}</div>
-    {% if current_user.is_authenticated %}
-    <form method="post" action="{{ url_for('auth.logout') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="quiet" type="submit">Sign out</button>
-    </form>
-    {% endif %}
+    <div class="nav-left">
+      <button class="app-back" type="button" data-app-back aria-label="Back">‹ Back</button>
+      {% if tenant_nav %}<button class="menu-button" type="button" data-menu-open aria-controls="drawer" aria-expanded="false" aria-label="Open menu">{{ icon('menu') }}</button>{% endif %}
+      <a class="brand" href="{{ url_for('platform.dashboard') if request.blueprint == 'platform' else url_for('workspace.dashboard') }}">AI <span>Workforce</span></a>
+      {% if tenant_nav %}
+      <nav class="desktop-nav" aria-label="Main">
+        {% for endpoint, label, ico, active in nav %}{% if endpoint != 'workspace.dashboard' %}<a class="nav-link" href="{{ url_for(endpoint) }}"{% if ep in active %} aria-current="page"{% endif %}>{{ label }}</a>{% endif %}{% endfor %}
+      </nav>
+      {% endif %}
+    </div>
+    <div class="topbar-tools">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="ti" aria-hidden="true">{{ icon('moon', 'ic ic-moon') }}{{ icon('sun', 'ic ic-sun') }}</span><span class="tl">Dark mode</span></button>
+      {% if tenant_nav %}
+      <form class="signout-form" method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="quiet" type="submit">Sign out</button>
+      </form>
+      {% endif %}
+    </div>
   </header>
-  <main class="container">
+
+  {% if tenant_nav %}
+  <div class="drawer-scrim" id="drawer-scrim" hidden></div>
+  <aside class="drawer" id="drawer" hidden aria-hidden="true" aria-label="Menu" role="dialog" aria-modal="true">
+    <div class="drawer-head">
+      <span class="brand">AI <span>Workforce</span></span>
+      <button class="drawer-close" type="button" data-menu-close aria-label="Close menu">{{ icon('close') }}</button>
+    </div>
+    <nav class="drawer-nav" aria-label="All pages">
+      {% for endpoint, label, ico, active in nav %}<a href="{{ url_for(endpoint) }}"{% if ep in active %} aria-current="page"{% endif %}>{{ icon(ico, "di") }}{{ label }}</a>{% endfor %}
+    </nav>
+    <div class="drawer-foot">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="ti" aria-hidden="true">{{ icon('moon', 'ic ic-moon') }}{{ icon('sun', 'ic ic-sun') }}</span><span class="tl">Dark mode</span></button>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="secondary-button" type="submit">Sign out</button>
+      </form>
+    </div>
+  </aside>
+  {% endif %}
+
+  <main class="container" id="main">
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}<div class="notice">{{ message }}</div>{% endfor %}
+      {% for category, message in messages %}<div class="notice" role="status">{{ message }}</div>{% endfor %}
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
+
+  {% if tenant_nav %}
+  <nav class="tabbar" aria-label="Main destinations">
+    {% for endpoint, label, ico, active in nav %}{% if endpoint in tabs %}<a href="{{ url_for(endpoint) }}"{% if ep in active %} aria-current="page"{% endif %}>{{ icon(ico, "tab-i") }}<span class="tab-l">{{ label }}</span></a>{% endif %}{% endfor %}
+    <button type="button" data-menu-open aria-controls="drawer">{{ icon('menu', 'tab-i') }}<span class="tab-l">Menu</span></button>
+  </nav>
+  {% endif %}
 </body>
 </html>
