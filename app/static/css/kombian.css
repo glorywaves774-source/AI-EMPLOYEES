@@ -1,0 +1,81 @@
+/* Kombian — help assistant. Glass window on desktop; half-screen sheet on phones. */
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.kombian-fab {
+  position: fixed; z-index: 70; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom));
+  display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 20px 0 16px; border: 0; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 16px; font-weight: 800; color: var(--btn-text);
+  background: linear-gradient(120deg, var(--btn-from), var(--btn-to));
+  box-shadow: 0 14px 32px -12px var(--btn-from), 0 2px 0 rgba(255,255,255,.25) inset;
+  transition: transform .15s;
+}
+.kombian-fab:hover { transform: translateY(-2px); }
+.kombian-fab[aria-expanded="true"] { transform: scale(.94); }
+
+.kombian {
+  position: fixed; z-index: 75; right: max(20px, env(safe-area-inset-right)); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 68px);
+  width: min(400px, calc(100vw - 40px)); height: min(600px, calc(100vh - 140px));
+  display: flex; flex-direction: column; overflow: hidden; border-radius: 24px;
+  background: var(--glass-strong); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow), 0 30px 80px -30px rgba(0,0,0,.45);
+  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  transform-origin: bottom right; animation: kombian-in .18s ease-out;
+}
+.kombian[hidden] { display: none; }
+@keyframes kombian-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .kombian { animation: none; } }
+
+.kombian-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--line); }
+.kombian-head h2 { margin: 0; font-size: 18px; flex: 1; }
+.kombian-avatar { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 12px; font-weight: 800; color: var(--btn-text); background: linear-gradient(135deg, var(--btn-from), var(--btn-to)); }
+.kombian-close { width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 12px; cursor: pointer; color: var(--text); background: var(--neu-bg); box-shadow: 3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light); }
+
+.kombian-log { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.kmsg { max-width: 88%; padding: 10px 14px; border-radius: 18px; font-size: 15.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.kmsg p { margin: 0 0 8px; } .kmsg p:last-child { margin-bottom: 0; }
+.kmsg ol, .kmsg ul { margin: 4px 0 8px; padding-left: 1.3em; } .kmsg li { margin: 3px 0; }
+.kmsg-bot { align-self: flex-start; color: var(--text); background: var(--neu-bg); border-bottom-left-radius: 6px; box-shadow: 3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light); }
+.kmsg-user { align-self: flex-end; color: var(--btn-text); background: linear-gradient(120deg, var(--btn-from), var(--btn-to)); border-bottom-right-radius: 6px; }
+.kmsg a.klink { font-weight: 700; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+.kmsg-error { color: var(--bad-text); background: var(--bad-bg); box-shadow: none; }
+.kmsg-typing { display: inline-flex; gap: 5px; align-items: center; }
+.kmsg-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: kdot 1s infinite ease-in-out; }
+.kmsg-typing i:nth-child(2) { animation-delay: .15s; } .kmsg-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes kdot { 50% { opacity: .3; transform: translateY(-3px); } }
+
+.kombian-suggest { display: flex; gap: 8px; overflow-x: auto; padding: 4px 14px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.kombian-suggest::-webkit-scrollbar { display: none; }
+.kombian-suggest button { flex: none; scroll-snap-align: start; border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--text); background: var(--neu-bg); box-shadow: 3px 3px 7px var(--neu-dark), -3px -3px 7px var(--neu-light); }
+.kombian-suggest button:hover { color: var(--brand); }
+
+.kombian-form { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px; border-top: 1px solid var(--line); }
+.kombian-form textarea { margin: 0; min-height: 46px; max-height: 120px; resize: none; padding: 11px 14px; border-radius: 16px; font-size: 16px; line-height: 1.4; }
+.kombian-send { flex: none; width: 46px; height: 46px; display: grid; place-items: center; border: 0; border-radius: 14px; cursor: pointer; color: var(--btn-text); background: linear-gradient(120deg, var(--btn-from), var(--btn-to)); }
+.kombian-send:disabled { opacity: .55; cursor: default; }
+.kombian-note { margin: 0; padding: 0 14px 10px; font-size: 12.5px; color: var(--muted); }
+
+/* ---- Phones: half-screen sheet above the round button ---- */
+@media (max-width: 760px) {
+  .kombian-fab { width: 56px; padding: 0; justify-content: center; right: max(14px, env(safe-area-inset-right)); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 0px); }
+  .kombian-fab-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  body.has-tabbar .kombian-fab { bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .kombian {
+    left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); width: auto;
+    height: 58vh; height: 58dvh; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 64px); border-radius: 22px;
+  }
+  body.has-tabbar .kombian { height: 52vh; height: 52dvh; bottom: calc(76px + env(safe-area-inset-bottom) + 64px); }
+  .kombian-head { padding: 8px 8px 8px 12px; }
+  .kombian-head h2 { font-size: 17px; }
+  .kombian-avatar { width: 30px; height: 30px; border-radius: 10px; }
+  /* While typing: JS sizes the sheet to the space above the keyboard; extras hide */
+  .kombian.typing .kombian-suggest, .kombian.typing .kombian-note { display: none; }
+  .kombian.typing { border-radius: 18px; }
+  body.kombian-typing .kombian-fab, body.kombian-typing .tabbar { visibility: hidden; }
+}
+@media print { .kombian, .kombian-fab { display: none !important; } }
+
+/* Leave room so the floating button never covers the end of a page */
+body.has-kombian .container { padding-bottom: 110px; }
+@media (max-width: 760px) {
+  body.has-kombian.has-tabbar .container { padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
+  body.has-kombian:not(.has-tabbar) .container { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+}

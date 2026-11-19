@@ -105,6 +105,28 @@ def create_app(config_class=Config):
     app.register_blueprint(billing_bp)
     from .platform import platform_bp
     app.register_blueprint(platform_bp)
+    from .help import help_bp
+    from .help.routes import rate_limit_key
+    limiter.limit("10 per minute;100 per day", key_func=rate_limit_key)(help_bp)
+    app.register_blueprint(help_bp)
+
+    @app.context_processor
+    def ui_context():
+        """Role-aware navigation and Kombian availability for the page shell."""
+        from flask import session as _s
+        from flask_login import current_user as _cu
+        from .help.pages import NAV_ORDER, TAB_KEYS, WORKSPACE_PAGES
+        role = None
+        if request.blueprint == "platform":
+            role = "platform_admin" if _s.get("platform_admin_id") else None
+        elif _cu.is_authenticated and not _s.get("mfa_pending"):
+            m = g.get("membership")
+            if m is None and _s.get("active_tenant_id"):
+                from .models import TenantMembership
+                m = TenantMembership.query.filter_by(user_id=_cu.id, tenant_id=_s["active_tenant_id"], status="active").first()
+            role = m.role if m else None
+        nav = [k for k in NAV_ORDER if role in WORKSPACE_PAGES[k][2]] if role and role != "platform_admin" else []
+        return {"ui_role": role, "ui_nav": nav, "ui_tabs": [k for k in TAB_KEYS if k in nav], "kombian_enabled": bool(role)}
     from .celery_factory import make_celery
     app.extensions["celery"] = make_celery(app)
     from .workforce.tasks import register_tasks
@@ -187,6 +209,11 @@ def create_app(config_class=Config):
     # Health probes are exempt from rate limiting: Render's checker polls every
     # few seconds from one internal IP, which exceeds the default per-IP limit
     # and would get the service marked unhealthy (502 for every visitor).
+    @app.get("/favicon.ico")
+    @limiter.exempt
+    def favicon():
+        return redirect(url_for("static", filename="favicon.svg"), code=301)
+
     @app.get("/healthz")
     @limiter.exempt
     def healthz():
