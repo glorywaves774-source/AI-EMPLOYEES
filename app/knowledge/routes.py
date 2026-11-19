@@ -213,8 +213,10 @@ def delete_document(document_id):
 @login_required
 @active_membership_required
 def integrations():
-    connections = IntegrationConnection.query.filter_by(
-        tenant_id=g.active_tenant_id).order_by(IntegrationConnection.created_at.desc()).all()
+    existing = {c.provider: c for c in IntegrationConnection.query.filter_by(tenant_id=g.active_tenant_id).all()}
+    connections = [{"provider": p, "status": existing[p].status if p in existing else "not_connected",
+                    "updated_at": existing[p].updated_at if p in existing else None}
+                   for p in ("google_drive", "email")]
     return render_template("knowledge/integrations.html", connections=connections)
 
 
