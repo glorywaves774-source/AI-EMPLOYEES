@@ -39,7 +39,7 @@ class Milestone12SecurityTests(unittest.TestCase):
                 full_name="Platform Admin",
                 password_hash=bcrypt.generate_password_hash("correct-password-123").decode(),
                 mfa_enabled=True,
-                mfa_secret="JBSWY3DPEHPK3PXP",
+                mfa_secret="JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP",
             )
             db.session.add(self.admin)
             db.session.commit()

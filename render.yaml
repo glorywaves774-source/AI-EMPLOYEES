@@ -115,7 +115,7 @@ services:
   - type: redis
     name: ai-workforce-redis
     plan: starter
-    maxmemoryPolicy: allkeys-lru
+    maxmemoryPolicy: noeviction  # Redis is the Celery broker; eviction would silently drop queued tasks
 
   - type: cron
     name: ai-workforce-expiry-job

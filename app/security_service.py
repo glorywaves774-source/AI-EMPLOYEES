@@ -7,6 +7,13 @@ from .extensions import db, bcrypt
 from .models import SecurityToken, User
 
 def now(): return datetime.now(timezone.utc)
+
+def as_utc(value):
+    """Return value as an aware UTC datetime. SQLite drops tzinfo on
+    DateTime(timezone=True) columns; PostgreSQL keeps it."""
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 def hash_token(raw): return hashlib.sha256(raw.encode()).hexdigest()
 
 def issue_token(user_id, token_type, minutes):
@@ -16,7 +23,7 @@ def issue_token(user_id, token_type, minutes):
 
 def consume_token(raw, token_type):
     token=SecurityToken.query.filter_by(token_hash=hash_token(raw), token_type=token_type, used_at=None).first()
-    if not token or token.expires_at <= now(): return None
+    if not token or as_utc(token.expires_at) <= now(): return None
     token.used_at=now(); db.session.flush(); return token
 
 def send_email(to, subject, body):

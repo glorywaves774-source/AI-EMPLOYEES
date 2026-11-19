@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db, bcrypt
 from app.models import User, Tenant, TenantMembership, AuditLog, Department, AIEmployee, SecurityToken
 from app.billing.services import create_trial_subscription
-from app.security_service import issue_token, consume_token, send_email, verify_mfa, setup_mfa, hash_token
+from app.security_service import issue_token, consume_token, send_email, verify_mfa, setup_mfa, hash_token, as_utc
 from . import auth_bp
 
 def slugify(value):
@@ -15,7 +15,7 @@ def slugify(value):
 def _utcnow(): return datetime.now(timezone.utc)
 
 def _locked(user):
-    return user.locked_until and user.locked_until > _utcnow()
+    return bool(user.locked_until) and as_utc(user.locked_until) > _utcnow()
 
 def _security_failure(user):
     user.failed_login_attempts += 1
@@ -44,7 +44,7 @@ def register():
             for n,t,d in emps: db.session.add(AIEmployee(tenant_id=tenant.id,department_id=deps[d].id,name=n,job_title=t,status="draft",is_system_template=True))
             create_trial_subscription(tenant.id); db.session.add(AuditLog(tenant_id=tenant.id,actor_user_id=user.id,action="tenant.registered",target_type="tenant",target_id=str(tenant.id)))
             token=issue_token(user.id,"email_verification",current_app.config.get("EMAIL_VERIFICATION_HOURS",24)*60); db.session.commit()
-            link=f"{current_app.config.get('PUBLIC_BASE_URL').rstrip('/')}{url_for('auth.verify_email',token=token)}"
+            link=f"{(current_app.config.get('PUBLIC_BASE_URL') or request.host_url).rstrip('/')}{url_for('auth.verify_email',token=token)}"
             try:
                 sent=send_email(email,"Verify your AI Workforce account",f"Hello {full_name},\n\nVerify your account: {link}\n\nThis link expires in 24 hours.")
             except Exception:
@@ -123,7 +123,7 @@ def forgot_password():
     if request.method=="POST":
         email=request.form.get("email","").strip().lower(); user=User.query.filter_by(email=email).first()
         if user:
-            token=issue_token(user.id,"password_reset",current_app.config.get("PASSWORD_RESET_MINUTES",30)); db.session.commit(); link=f"{current_app.config.get('PUBLIC_BASE_URL').rstrip('/')}{url_for('auth.reset_password',token=token)}"
+            token=issue_token(user.id,"password_reset",current_app.config.get("PASSWORD_RESET_MINUTES",30)); db.session.commit(); link=f"{(current_app.config.get('PUBLIC_BASE_URL') or request.host_url).rstrip('/')}{url_for('auth.reset_password',token=token)}"
             try:
                 send_email(email,"Reset your AI Workforce password",f"Reset your password: {link}\n\nThe link expires in 30 minutes.")
             except Exception:
@@ -134,7 +134,7 @@ def forgot_password():
 @auth_bp.route("/reset-password/<token>", methods=["GET","POST"])
 def reset_password(token):
     record=SecurityToken.query.filter_by(token_hash=hash_token(token),token_type="password_reset",used_at=None).first()
-    if not record or record.expires_at<=_utcnow(): flash("The password reset link is invalid or expired.","error"); return redirect(url_for("auth.login"))
+    if not record or as_utc(record.expires_at)<=_utcnow(): flash("The password reset link is invalid or expired.","error"); return redirect(url_for("auth.login"))
     if request.method=="POST":
         password=request.form.get("password","")
         if len(password)<12: flash("Password must contain at least 12 characters.","error"); return render_template("auth/reset_password.html")
