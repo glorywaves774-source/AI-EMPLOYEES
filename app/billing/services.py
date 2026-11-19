@@ -10,6 +10,7 @@ import urllib.parse
 import uuid
 from flask import current_app
 from app.extensions import db
+from app.security_service import as_utc
 from app.models import (
     SubscriptionPlan, TenantSubscription, SubscriptionChangeRequest,
     Payment, Invoice, AuditLog, BillingWebhookEvent
@@ -65,10 +66,10 @@ def current_subscription(tenant_id):
     if not sub:
         return None
     now = datetime.now(timezone.utc)
-    if sub.status == "trialing" and sub.trial_ends_at and sub.trial_ends_at <= now:
+    if sub.status == "trialing" and sub.trial_ends_at and as_utc(sub.trial_ends_at) <= now:
         sub.status = "expired"
         db.session.commit()
-    elif sub.status in {"active", "past_due"} and sub.current_period_end and sub.current_period_end <= now:
+    elif sub.status in {"active", "past_due"} and sub.current_period_end and as_utc(sub.current_period_end) <= now:
         if sub.cancel_at_period_end or sub.status == "past_due":
             sub.status = "expired"
             if not sub.canceled_at:

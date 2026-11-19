@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Integration Centre · AI Workforce{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('knowledge.index') }}">← Back to knowledge library</a>
+<div class="eyebrow">INTEGRATION CENTRE</div>
+<h1>External integrations</h1>
+<p class="muted">Connect business systems so authorised AI employees can work with your files and email. Live connections are coming in a later release; for now you can register interest and the request is recorded in your audit log. No external account is connected and no data leaves AI Workforce.</p>
+<div class="grid">
+{% for c in connections %}
+<section class="panel">
+  <div class="icon">{% if c.provider == 'google_drive' %}◫{% else %}✉{% endif %}</div>
+  <h2>{{ 'Google Drive' if c.provider == 'google_drive' else 'Business Email' }}</h2>
+  <p>Status: <span class="status">{{ c.status|replace('_',' ') }}</span></p>
+  <p class="small-note">{% if c.provider == 'google_drive' %}Planned: user-authorised file discovery and read-only import with limited OAuth scopes.{% else %}Planned: authorised mailbox access with restricted scopes; sending messages will require separate approval controls.{% endif %}</p>
+  {% if g.membership.role in ['owner','admin'] %}
+    {% if c.status == 'setup_requested' %}
+      <p class="small-note">Setup requested{% if c.updated_at %} on {{ c.updated_at.strftime('%d %b %Y') }}{% endif %}.</p>
+    {% else %}
+      <form method="post" action="{{ url_for('knowledge.request_integration_setup', provider=c.provider) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="primary" type="submit">Request setup</button></form>
+    {% endif %}
+  {% else %}
+    <p class="small-note">Ask a workspace owner or admin to request setup.</p>
+  {% endif %}
+</section>
+{% endfor %}
+</div>
+<div class="footnote">Credentials for future connections are encrypted with a dedicated key before storage, and every setup action is recorded in the workspace audit log.</div>
+{% endblock %}
