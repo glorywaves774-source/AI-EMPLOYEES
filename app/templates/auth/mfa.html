@@ -1,1 +1,13 @@
-{% extends "base.html" %}{% block content %}<h1>Multi-factor authentication</h1><p>Enter the code from your authenticator app or a recovery code.</p><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="code" required autocomplete="one-time-code"><button type="submit">Verify</button></form>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Verify sign-in · AI Workforce{% endblock %}
+{% block content %}
+<div class="auth-wrap"><section class="auth-card">
+  <p class="eyebrow">TWO-STEP VERIFICATION</p>
+  <h1>Enter your code</h1>
+  <p class="muted">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Authentication code<input name="code" inputmode="numeric" autocomplete="one-time-code" required></label>
+    <button class="primary" type="submit">Verify</button>
+  </form>
+</section></div>
+{% endblock %}

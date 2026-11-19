@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Sign in · AI Workforce{% endblock %}
 {% block content %}
-<section class="auth-card">
+<div class="auth-wrap"><section class="auth-card">
   <p class="eyebrow">KAYRON GLOBAL TECH SERVICES</p>
   <h1>Welcome back</h1>
   <p class="muted">Sign in to your business workspace.</p>
@@ -11,6 +11,6 @@
     <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
     <button class="primary" type="submit">Sign in</button>
   </form>
-  <p class="muted">New to AI Workforce? <a href="{{ url_for('auth.register') }}">Create a workspace</a></p>
-</section>
+  <div class="auth-links"><a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a><span>New here? <a href="{{ url_for('auth.register') }}">Create a workspace</a></span></div>
+</section></div>
 {% endblock %}
