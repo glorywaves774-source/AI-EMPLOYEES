@@ -22,6 +22,7 @@ class Config:
     PREFERRED_URL_SCHEME = "https"
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
     OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+    HELP_MODEL = os.environ.get("HELP_MODEL")  # Kombian help assistant; defaults to OPENAI_MODEL
 
     MAX_CONTENT_LENGTH = 12 * 1024 * 1024
     STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local")

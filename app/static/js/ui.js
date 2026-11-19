@@ -84,6 +84,13 @@
     window.addEventListener('pageshow', function () { if (history.state && history.state.drawer && !isOpen()) { try { history.back(); } catch (e) {} } });
   }
 
+  // ---------- Selects that save on change ----------
+  // (Inline onchange handlers are blocked by the CSP, so this lives here.)
+  document.addEventListener('change', function (e) {
+    var sel = e.target.closest('select[data-autosubmit]');
+    if (sel && sel.form) { if (sel.form.requestSubmit) sel.form.requestSubmit(); else sel.form.submit(); }
+  });
+
   // ---------- Installed-app Back button ----------
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-app-back]')) { e.preventDefault(); history.back(); }

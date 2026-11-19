@@ -1,0 +1,133 @@
+# AI Workforce — help guide for business workspaces
+
+Page references are written like [[page:billing]]. Kombian turns them into links only for people whose role can open that page.
+
+## What AI Workforce is
+AI Workforce gives a business a private workspace with a team of AI employees. You give the team a job in plain words; the AI Team Coordinator splits it up, chooses up to 4 active specialists, collects their parts and writes one combined result. Every result is a draft for a person to check. The AI never sends emails, makes payments or takes any action outside the app.
+
+Each business's workspace is private: other businesses can never see its employees, jobs or documents.
+
+## Roles in a workspace
+- **Owner** — the person who created the workspace. Can do everything, including exporting all workspace data.
+- **Admin** — everything except exporting workspace data: changes the plan, deletes documents, approves or rejects requests, requests integrations.
+- **Manager** — assigns work, switches AI employees on/off, creates departments and AI employees, uploads documents and sets AI access, sees Analytics, submits approval requests.
+- **Employee** — can view the dashboard, jobs, approvals, knowledge, integrations and billing, and set up two-step sign-in, but cannot change anything else.
+
+There is no screen for inviting staff yet, so today each workspace has one user: its Owner.
+
+## Signing up and signing in
+1. Open the business sign-up page (/auth/register). Enter full name, work email, business name and a password of at least 12 characters, then tap **Create workspace**.
+2. You land on [[page:home]] straight away. The 14-day Starter trial starts immediately.
+3. Next time, sign in at /auth/login. Five wrong passwords lock the account for 15 minutes.
+4. **Forgot password?** on the sign-in page sends a reset link (only once the platform owner has set up email).
+5. The platform owner's admin account is separate and does NOT work on the business sign-in page.
+
+## The starting team
+Every new workspace gets 9 departments and 10 AI employees, all starting as **Draft** (switched off):
+| AI employee | Department |
+| --- | --- |
+| AI Team Coordinator | Executive Office |
+| AI Executive Assistant | Executive Office |
+| AI Human Resource Officer | Human Resources |
+| AI Accountant | Finance |
+| AI Marketing Officer | Marketing |
+| AI Customer Service Officer | Customer Service |
+| AI Operations Manager | Operations |
+| AI Project Manager | Projects |
+| AI Research Officer | Research |
+| AI Software Developer | Technology |
+
+## Switching AI employees on (required before any work)
+1. On [[page:home]], scroll to **AI employees**.
+2. On the **AI Team Coordinator** card, change the menu at the bottom from **Draft** to **Active**. The page reloads and the badge turns green.
+3. Do the same for one or more specialists who fit the work.
+- Statuses: **Draft** (set up, not working), **Active** (can be given work), **Paused** (temporarily off; frees a place).
+- Active employees allowed at once: **Starter 3**, **Growth 10**, **Business 30**. The Coordinator counts as one.
+- If you see "Activate the Team Coordinator and at least one specialist before assigning work", switch them on first.
+- If you see "Your … plan allows up to N active AI employees", pause one or upgrade on [[page:billing]].
+- Owners, Admins and Managers can change statuses.
+
+## Adding departments and AI employees
+1. On [[page:home]], use **Add department**: a name (1–100 characters) and description, then **Create department**.
+2. Use **Create AI employee**: name (e.g. AI Legal Officer), job title, department and responsibilities, then **Create draft employee**.
+3. New employees start as Draft; switch to Active when ready.
+A clear job title and description matter: the Coordinator picks specialists by matching words in your assignment against each active employee's job title, name and description.
+
+## Giving the team a job (assignments)
+1. On [[page:home]], find **Assign work to your AI team**.
+2. **Assignment title**: a short name, e.g. "Prepare Q4 cash-flow summary".
+3. **Assignment details** (up to 8,000 characters): the goal, the facts the team needs, limits, and the format you want back. Specific briefs get better results.
+4. Tap **Send assignment to AI workforce**. The job appears under **Recent assignments**; tap it to open its page and reload to see progress.
+
+Job statuses: **Queued** (waiting), **Running** (specialists working), **Needs review** (done, awaiting a person's approval), **Completed**, **Failed** (see the message on its page), **Cancelled**.
+
+On a job's page: the brief, the Coordinator's plan, each specialist's contribution and the combined result.
+- **Approve deliverable** / **Reject deliverable** (with an optional note) records your decision only.
+- **Cancel assignment** stops a queued job at once; a running job stops after its current step.
+- **Retry eligible failed steps** re-runs only the failed parts; finished parts are kept.
+
+Every job counts towards the monthly task allowance: **Starter 100**, **Growth 500**, **Business 2,000** per billing period. A job stuck on Queued usually means the background worker is down — tell the platform owner.
+
+## Approvals
+[[page:approvals]] is the record of who signed off on what. Approving only records a decision; nothing is carried out automatically.
+- **Request approval**: enter an **Action type** (e.g. "Supplier payment over GHS 10,000") and a **Description**, then **Submit for approval**. Owners, Admins and Managers can submit.
+- **Decide**: under **Approval requests**, add an optional **Decision note** and tap **Approve** or **Reject**. Only Owners and Admins can decide.
+- **AI deliverables awaiting review** lists jobs whose results need approving.
+
+## Business knowledge (documents)
+On [[page:knowledge]] you upload your own documents so AI employees can use them as reference. Files are stored encrypted in private storage.
+- **Create a repository** (a folder): name and description, then **Create repository**.
+- **Upload a document**: **Choose file** (PDF, DOCX, TXT, MD or CSV, up to 12 MB), pick the repository, then **Upload and index**. The text is extracted so it can be searched.
+- **Give AI employees access**: open the repository's access page, tick the AI employees that may read it, then **Save access permissions**. Access is off until granted, and every read by an AI employee is logged.
+- **Search** finds matching passages across documents. Each document has **Download** and **Delete** (delete is permanent and removes its searchable text).
+- Owners, Admins and Managers create repositories, upload and set access; only Owners and Admins delete.
+
+## Integrations
+[[page:integrations]] shows Google Drive and Business Email. Live connections are not available yet. An Owner or Admin can tap **Request setup** to register interest; nothing is connected and no data leaves the app.
+
+## Analytics
+[[page:analytics]] (Owners, Admins, Managers) shows, for the last 7, 30, 90 or 365 days: tasks created, completed, failed, queued/running; AI usage and estimated AI cost; workforce health (active AI employees, pending approvals, knowledge documents); and each AI employee's activity. The export button downloads the figures as a CSV file for Excel or Google Sheets.
+
+## Plans, billing and payments
+Plans (prices set by the platform owner, in GHS per month):
+| Plan | Price | Active AI employees | Tasks per period |
+| --- | --- | --- | --- |
+| Starter | GHS 450 | 3 | 100 |
+| Growth | GHS 2,200 | 10 | 500 |
+| Business | GHS 8,500 | 30 | 2,000 |
+Every new workspace starts on a **14-day Starter trial**.
+
+On [[page:billing]]: current plan, limits, tasks used this period and when the trial or period ends.
+- **Upgrade**: pick a **Payment provider** on a plan and tap **Choose plan**; you pay on the provider's page and the plan switches on after payment is confirmed. (Online payment works only once the platform owner has connected Paystack or Stripe.)
+- **Cancel at period end** stops renewal; access continues until the date shown. You can undo it before then.
+- **Payment history** and **Invoices** list past payments.
+- Only Owners and Admins can change or cancel the plan.
+- "Your subscription is not active. Choose a plan to continue." means the trial or paid period ended or was cancelled.
+
+## Account security
+- **Two-step sign-in**: open [[page:security]], tap **Start setup**, add the key to an authenticator app (Google Authenticator, Microsoft Authenticator) using "Enter a setup key", enter the current code and **save the recovery codes** shown (each works once).
+- After that, signing in asks for the 6-digit code; a recovery code works in its place.
+- Passwords need at least 12 characters.
+- The Owner can download a copy of workspace data (members, AI employees, jobs) from [[page:export]].
+
+## Look and layout
+- **Dark mode / Light mode** button at the top right of every page; the choice is remembered on that device.
+- On phones: Home, Approvals, Knowledge and Analytics are in the bottom bar; **Menu** holds the other pages, the theme switch and Sign out.
+- **Sign out**: top right on a computer, inside Menu on a phone.
+
+## Troubleshooting
+| What you see | What to do |
+| --- | --- |
+| Employee stays on Draft after choosing Active | Reload; if it persists the site update may not be live yet — tell the platform owner |
+| "Activate the Team Coordinator and at least one specialist" | Switch them to Active on [[page:home]] |
+| "Your plan allows up to N active AI employees" | Pause one or upgrade on [[page:billing]] |
+| "Your subscription is not active" | Choose a plan on [[page:billing]], or ask the platform owner |
+| Job stuck on Queued | The background worker may be down; tell the platform owner |
+| Job Failed | Open it, read the message, tap **Retry eligible failed steps** |
+| "Invalid credentials or account temporarily locked" | Check you're on the business sign-in page and the password; wait 15 minutes after 5 failures |
+| No verification or reset email | Email isn't set up yet; ask the platform owner |
+| 502 Bad Gateway | The site is restarting; wait 2 minutes |
+| "internal_server_error" with a request ID | Send the request ID to the platform owner |
+
+## Privacy
+Kombian only sees your question and this guide. It never sees your documents, jobs, employees or other records. Phone numbers, email addresses and long ID numbers are removed from questions before they're sent to the AI service.
