@@ -26,6 +26,13 @@ def _invoice_number():
 def _activate_payment(payment, provider_event=None, period_end=None):
     if payment.status == "paid":
         return
+    if (payment.metadata_json or {}).get("kind") == "live_test":
+        # Platform-admin check that live payments reach the app. Changes no plan, issues no invoice.
+        payment.status, payment.paid_at = "paid", datetime.now(timezone.utc)
+        payment.metadata_json = {**(payment.metadata_json or {}), "last_provider_event": provider_event or ""}
+        db.session.add(AuditLog(tenant_id=payment.tenant_id, actor_user_id=None, action="billing.live_test_paid",
+                                target_type="payment", target_id=str(payment.id), details_json={"provider_event": provider_event or ""}))
+        return
     if (payment.metadata_json or {}).get("kind") == "video_pack":
         from app.video.service import add_pack
         now = datetime.now(timezone.utc)
@@ -90,7 +97,8 @@ def index():
         from .services import ensure_tenant_subscription
         sub = ensure_tenant_subscription(g.active_tenant_id)
         db.session.commit()
-    payments = Payment.query.filter_by(tenant_id=g.active_tenant_id).order_by(Payment.created_at.desc()).limit(20).all()
+    payments = [p for p in Payment.query.filter_by(tenant_id=g.active_tenant_id).order_by(Payment.created_at.desc()).limit(30).all()
+                if (p.metadata_json or {}).get("kind") != "live_test"][:20]
     invoices = Invoice.query.filter_by(tenant_id=g.active_tenant_id).order_by(Invoice.issued_at.desc()).limit(20).all()
     usage = task_usage(g.active_tenant_id)
     plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.amount.asc()).all()

@@ -3,7 +3,7 @@ from urllib.parse import urlsplit
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 import pyotp
-from flask import abort, flash, redirect, render_template, request, session, url_for, current_app
+from flask import abort, flash, make_response, redirect, render_template, request, session, url_for, current_app
 from app.extensions import db, bcrypt
 from app.models import PlatformAdmin, PlatformAuditLog, SecurityEvent, Tenant, TenantSubscription, SubscriptionPlan, Payment
 from app.security_monitor import record_security_event
@@ -153,9 +153,92 @@ def dashboard():
     subscriptions = TenantSubscription.query.order_by(TenantSubscription.created_at.desc()).all()
     payments = Payment.query.order_by(Payment.created_at.desc()).limit(30).all()
     security_events = SecurityEvent.query.order_by(SecurityEvent.created_at.desc()).limit(50).all()
-    return render_template("platform/dashboard.html", tenants=tenants, plans=plans, subscriptions=subscriptions,
-                           payments=payments, security_events=security_events, ai_outage=_recent_ai_outage(),
-                           platform_name=current_app.config.get("PLATFORM_NAME", "Kayron Global Tech Services"))
+    from app.billing.services import configured_payment_providers
+    response = make_response(render_template(
+        "platform/dashboard.html", tenants=tenants, plans=plans, subscriptions=subscriptions,
+        payments=payments, security_events=security_events, ai_outage=_recent_ai_outage(),
+        paystack_ready="paystack" in {c for c, _ in configured_payment_providers()},
+        live_test_amount=_live_test_amount(),
+        platform_name=current_app.config.get("PLATFORM_NAME", "Kayron Global Tech Services")))
+    # The live-test button redirects to Paystack's checkout; allow that origin on this page only.
+    from app.billing.routes import CHECKOUT_CSP
+    response.headers["Content-Security-Policy"] = CHECKOUT_CSP
+    return response
+
+
+def _live_test_amount():
+    try:
+        amount = Decimal(str(current_app.config.get("LIVE_TEST_CHARGE_AMOUNT") or "1"))
+    except InvalidOperation:
+        amount = Decimal("1")
+    return max(amount, Decimal("1")).quantize(Decimal("0.01"))
+
+
+@platform_bp.post("/payments/live-test")
+@platform_admin_required
+def start_live_test():
+    """Charge a tiny amount through Paystack to prove live payments and webhooks work.
+    Linked to a chosen business for record-keeping only: it changes no plan and is hidden from that business."""
+    import uuid
+    from app.billing.services import initialize_paystack
+    tenant = Tenant.query.get(request.form.get("tenant_id", type=int) or 0)
+    if not tenant:
+        flash("Choose a business to file the test payment under.", "error")
+        return redirect(url_for("platform.dashboard"))
+    admin = PlatformAdmin.query.get(session["platform_admin_id"])
+    sub = TenantSubscription.query.filter_by(tenant_id=tenant.id).first()
+    payment = Payment(tenant_id=tenant.id, subscription_id=sub.id if sub else None, provider="paystack",
+                      provider_reference=f"AWT-{uuid.uuid4().hex}", amount=_live_test_amount(), currency="GHS",
+                      status="pending", metadata_json={"kind": "live_test", "platform_admin_id": admin.id})
+    db.session.add(payment)
+    db.session.add(PlatformAuditLog(platform_admin_id=admin.id, action="payment.live_test_started", target_type="payment",
+                                    details_json={"tenant_id": tenant.id, "amount": str(payment.amount)}))
+    db.session.commit()
+    try:
+        url = initialize_paystack(payment, admin.email, url_for("platform.live_test_callback", _external=True))
+    except Exception as exc:
+        payment.status = "failed"; payment.metadata_json = {**payment.metadata_json, "error": str(exc)[:500]}
+        db.session.commit()
+        flash(f"Paystack would not start the test payment: {str(exc)[:200]}", "error")
+        return redirect(url_for("platform.dashboard"))
+    return redirect(url)
+
+
+@platform_bp.get("/payments/live-test/callback")
+@platform_admin_required
+def live_test_callback():
+    from app.billing.routes import _activate_payment
+    from app.billing.services import paystack_amount_matches, verify_paystack_transaction
+    reference = request.args.get("reference", "")
+    payment = Payment.query.filter_by(provider="paystack", provider_reference=reference).first()
+    if not payment or (payment.metadata_json or {}).get("kind") != "live_test":
+        flash("Test payment not found.", "error")
+        return redirect(url_for("platform.dashboard"))
+    webhook_first = payment.status == "paid"
+    if not webhook_first:
+        try:
+            data = verify_paystack_transaction(reference)
+        except Exception:
+            current_app.logger.exception("Paystack verification failed")
+            data = {}
+        if data.get("status") == "success" and paystack_amount_matches(payment, data):
+            _activate_payment(payment, "paystack.verify")
+            db.session.commit()
+        elif data.get("status") in {"failed", "abandoned", "reversed"}:
+            payment.status = "failed"; db.session.commit()
+            flash("The test payment did not go through on Paystack's side. No money was taken.", "error")
+            return redirect(url_for("platform.dashboard"))
+        else:
+            flash("Paystack hasn't confirmed the test payment yet. Refresh in a minute.", "info")
+            return redirect(url_for("platform.dashboard"))
+    live = "live" if (current_app.config.get("PAYSTACK_SECRET_KEY") or "").startswith("sk_live_") else "TEST"
+    if webhook_first:
+        flash(f"Live payment test passed ({live} key): Paystack's webhook confirmed the GHS {payment.amount} payment. "
+              "You can refund it in Paystack → Transactions.", "success")
+    else:
+        flash(f"Payment confirmed by checking with Paystack ({live} key), but the webhook hadn't arrived yet. "
+              "Refresh in a minute; check the Paystack Live webhook URL if it stays this way.", "info")
+    return redirect(url_for("platform.dashboard"))
 
 
 _REF_TEXT = {
