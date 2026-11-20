@@ -32,10 +32,10 @@
 </section>
 <section class="analytics-grid">
 <article class="panel"><h2>Payment history</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Provider</th><th>Reference</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-{% for p in payments %}<tr><td>{{ p.created_at.strftime("%d %b %Y") }}</td><td>{{ p.provider|capitalize }}</td><td>{{ p.provider_reference[:20] }}</td><td>{{ p.currency }} {{ "%.2f"|format(p.amount|float) }}</td><td>{{ p.status }}</td></tr>{% else %}<tr><td colspan="5">No payment records yet.</td></tr>{% endfor %}
+{% for p in payments %}<tr><td>{{ p.created_at.strftime("%d %b %Y") }}</td><td>{{ p.provider|capitalize }}</td><td>{{ p.provider_reference[:20] }}</td><td>{{ p.currency }} {{ "%.2f"|format(p.amount|float) }}</td><td>{{ p.status|replace('_', ' ') }}</td></tr>{% else %}<tr><td colspan="5">No payment records yet.</td></tr>{% endfor %}
 </tbody></table></div></article>
 <article class="panel"><h2>Invoices</h2><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Period</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-{% for inv in invoices %}<tr><td>{{ inv.invoice_number }}</td><td>{{ inv.period_start.strftime("%d %b") if inv.period_start else "—" }}{% if inv.period_end %} – {{ inv.period_end.strftime("%d %b %Y") }}{% endif %}</td><td>{{ inv.currency }} {{ "%.2f"|format(inv.amount|float) }}</td><td>{{ inv.status }}</td></tr>{% else %}<tr><td colspan="4">No invoices yet.</td></tr>{% endfor %}
+{% for inv in invoices %}<tr><td>{{ inv.invoice_number }}</td><td>{{ inv.period_start.strftime("%d %b") if inv.period_start else "—" }}{% if inv.period_end %} – {{ inv.period_end.strftime("%d %b %Y") }}{% endif %}</td><td>{{ inv.currency }} {{ "%.2f"|format(inv.amount|float) }}</td><td>{{ inv.status|replace('_', ' ') }}</td></tr>{% else %}<tr><td colspan="4">No invoices yet.</td></tr>{% endfor %}
 </tbody></table></div></article>
 </section>
 {% endblock %}
