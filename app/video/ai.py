@@ -15,6 +15,7 @@ import urllib.request
 from flask import current_app
 
 from app.ai_providers import AIServiceUnavailable
+from app.http_client import USER_AGENT
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
@@ -202,7 +203,7 @@ def generate_video(prompt, aspect, dest_path):
             "response_format": {"type": "video", "aspect_ratio": aspect,
                                 "resolution": current_app.config.get("GEMINI_VIDEO_RESOLUTION") or "720p"}}
     req = urllib.request.Request(f"{GEMINI_BASE}/interactions", data=json.dumps(body).encode(), method="POST",
-                                 headers={"x-goog-api-key": key, "Content-Type": "application/json"})
+                                 headers={"x-goog-api-key": key, "Content-Type": "application/json", "User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(req, timeout=600) as resp:
             result = json.loads(resp.read().decode())
@@ -228,7 +229,7 @@ def generate_video(prompt, aspect, dest_path):
         with open(dest_path, "wb") as fh:
             fh.write(base64.b64decode(video["data"]))
     else:
-        dl = urllib.request.Request(video["uri"], headers={"x-goog-api-key": key})
+        dl = urllib.request.Request(video["uri"], headers={"x-goog-api-key": key, "User-Agent": USER_AGENT})
         with urllib.request.urlopen(dl, timeout=300) as resp, open(dest_path, "wb") as fh:
             while True:
                 block = resp.read(256 * 1024)
