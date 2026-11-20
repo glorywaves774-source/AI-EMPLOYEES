@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Repeating assignments · AI Workforce{% endblock %}
+{% block content %}
+<p class="eyebrow">WORKFORCE COMMAND</p><h1>Repeating assignments</h1>
+<p class="muted">These run automatically at the time shown (Ghana time) and count towards your allowance. To add one, choose <strong>Repeat</strong> when you send an assignment from the <a href="{{ url_for('workspace.dashboard') }}">dashboard</a>.</p>
+<div class="recurring-list">{% for r in items %}<article class="panel recurring-card">
+<div class="run-head"><h2>{{ r.title }}</h2><span class="state state-{{ 'active' if r.active else 'paused' }}">{{ 'on' if r.active else 'paused' }}</span></div>
+<p><strong>{{ describe(r) }}</strong>{% if r.active %} · next: {{ r.next_run_at.strftime('%a %d %b %Y, %H:%M') }}{% endif %}</p>
+{% if r.last_run_at %}<p class="muted">Last run {{ r.last_run_at.strftime('%d %b %Y, %H:%M') }}{% if r.last_task_id and not r.last_error %} · <a href="{{ url_for('workforce.task_detail', task_id=r.last_task_id) }}">see result</a>{% endif %}</p>{% endif %}
+{% if r.last_error %}<p class="notice">Skipped last time: {{ r.last_error }}</p>{% endif %}
+<details><summary>Assignment details</summary><p class="preserve">{{ r.instructions }}</p></details>
+{% if g.membership.role in ['owner','admin','manager'] %}<div class="asset-actions">
+<form method="post" action="{{ url_for('workforce.recurring_action', item_id=r.id, action='pause' if r.active else 'resume') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" type="submit">{{ 'Pause' if r.active else 'Resume' }}</button></form>
+<form method="post" action="{{ url_for('workforce.recurring_action', item_id=r.id, action='delete') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger" type="submit">Delete</button></form>
+</div>{% endif %}
+</article>{% else %}<p class="muted">No repeating assignments yet.</p>{% endfor %}</div>
+<a class="back-link" href="{{ url_for('workspace.dashboard') }}">← Back to dashboard</a>
+{% endblock %}

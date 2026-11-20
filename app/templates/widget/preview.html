@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Preview website chat · AI Workforce{% endblock %}
+{% block content %}
+<p class="eyebrow">WEBSITE CHAT · PREVIEW</p><h1>Try your chatbot</h1>
+<p class="muted">This is how customers will see it. Use the chat button in the corner and ask what customers usually ask: prices, opening hours, delivery, how to pay.{% if not w.enabled %} It's still off for your website; turn it on in <a href="{{ url_for('widget.manage') }}">Website chat</a> when you're happy.{% endif %}</p>
+<p class="muted">Preview chats are saved in the chat log too.</p>
+<a class="back-link" href="{{ url_for('widget.manage') }}">← Back to Website chat</a>
+<script src="{{ url_for('static', filename='js/chat-widget.js') }}" data-key="{{ w.public_key }}" data-preview="1" defer></script>
+{% endblock %}

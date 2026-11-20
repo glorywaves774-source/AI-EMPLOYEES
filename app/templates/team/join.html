@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Join workspace · AI Workforce{% endblock %}
+{% block content %}
+<div class="auth-wrap"><section class="auth-card">
+<p class="eyebrow">AI WORKFORCE</p>
+{% if invalid %}<h1>This invitation can't be used</h1><p class="muted">It may have expired, been cancelled or already been used. Ask the person who invited you to send a new one.</p>
+{% else %}<h1>Join {{ tenant.name }}</h1><p class="muted">You've been invited as <strong>{{ roles[inv.role] }}</strong> ({{ inv.email }}).</p>
+{% if signed_in and wrong_account %}<p class="notice">You're signed in with a different email. Sign out, then open this link again.</p>
+{% elif signed_in %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="primary" type="submit">Join workspace</button></form>
+{% elif existing %}<p>You already have an AI Workforce account. Sign in to accept.</p><a class="primary button-link" href="{{ url_for('auth.login', invite=request.view_args.token) }}">Sign in to join</a>
+{% else %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Full name<input name="full_name" autocomplete="name" required maxlength="160"></label>
+<label>Choose a password <small>(at least 12 characters)</small><input type="password" name="password" minlength="12" autocomplete="new-password" required></label>
+<label class="inline-choice consent"><input type="checkbox" name="accept_terms" value="yes" required> <span>I agree to the <a href="{{ url_for('legal.terms') }}" target="_blank" rel="noopener">terms of use</a> and <a href="{{ url_for('legal.privacy') }}" target="_blank" rel="noopener">privacy policy</a>.</span></label>
+<button class="primary" type="submit">Create account and join</button></form>{% endif %}{% endif %}
+</section></div>
+{% endblock %}

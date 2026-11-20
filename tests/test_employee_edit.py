@@ -17,7 +17,7 @@ class EmployeeEditTests(unittest.TestCase):
         self.app = create_app(C); self.client = self.app.test_client()
         with self.app.app_context(): db.create_all()
         self.client.post("/auth/register", data={"full_name": "Owner", "email": "o@example.com",
-            "business_name": "Example Ltd", "password": "a-very-strong-password-123"})
+            "business_name": "Example Ltd", "password": "a-very-strong-password-123", "accept_terms": "yes"})
         with self.app.app_context():
             e = AIEmployee.query.filter_by(job_title="Accountant").first()
             e.job_title = "Accountantant"; db.session.commit(); self.eid = e.id; self.dept = e.department_id

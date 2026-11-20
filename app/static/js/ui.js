@@ -91,6 +91,11 @@
     if (sel && sel.form) { if (sel.form.requestSubmit) sel.form.requestSubmit(); else sel.form.submit(); }
   });
 
+  // ---------- Read-only fields that select their text (e.g. invitation links) ----------
+  document.addEventListener('focusin', function (e) {
+    if (e.target.matches && e.target.matches('input[data-select-on-focus], textarea[data-select-on-focus]')) { e.target.select(); }
+  });
+
   // ---------- Installed-app Back button ----------
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-app-back]')) { e.preventDefault(); history.back(); }

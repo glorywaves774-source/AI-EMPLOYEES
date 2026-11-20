@@ -44,7 +44,7 @@ class KombianTests(unittest.TestCase):
 
     def register(self, email="owner@example.com", business="Secretive Holdings Ltd"):
         r = self.client.post("/auth/register", data={"full_name": "Owner Person", "email": email,
-                                                     "business_name": business, "password": "a-very-strong-password-123"})
+                                                     "business_name": business, "password": "a-very-strong-password-123", "accept_terms": "yes"})
         self.assertIn(r.status_code, (302, 303))
 
     def ask(self, q, **kw):
@@ -130,7 +130,7 @@ class KombianTests(unittest.TestCase):
             db.session.add(TenantMembership(user_id=u.id, tenant_id=t.id, role="employee", status="active"))
             db.session.commit()
         self.client.post("/auth/logout")
-        self.client.post("/auth/login", data={"email": "staff@example.com", "password": "a-very-strong-password-123"})
+        self.client.post("/auth/login", data={"email": "staff@example.com", "password": "a-very-strong-password-123", "accept_terms": "yes"})
         html = self.client.get("/dashboard").get_data(as_text=True)
         tabbar = html.split('class="tabbar"')[1].split("</nav>")[0]
         self.assertNotIn("/analytics/", tabbar)
@@ -167,7 +167,7 @@ class KombianCsrfAndRateLimitTests(unittest.TestCase):
             db.create_all()
         self.app.config["WTF_CSRF_ENABLED"] = False
         self.client.post("/auth/register", data={"full_name": "O", "email": "o@example.com",
-                                                 "business_name": "B", "password": "a-very-strong-password-123"})
+                                                 "business_name": "B", "password": "a-very-strong-password-123", "accept_terms": "yes"})
 
     def tearDown(self):
         with self.app.app_context():

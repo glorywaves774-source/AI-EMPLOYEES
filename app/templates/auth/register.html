@@ -11,6 +11,7 @@
     <label>Work email<input type="email" name="email" autocomplete="email" required></label>
     <label>Business name<input name="business_name" autocomplete="organization" required></label>
     <label>Password <small>(at least 12 characters)</small><input type="password" name="password" minlength="12" autocomplete="new-password" required></label>
+    <label class="inline-choice consent"><input type="checkbox" name="accept_terms" value="yes" required> <span>I agree to the <a href="{{ url_for('legal.terms') }}" target="_blank" rel="noopener">terms of use</a> and <a href="{{ url_for('legal.privacy') }}" target="_blank" rel="noopener">privacy policy</a>, on behalf of my business.</span></label>
     <button class="primary" type="submit">Create workspace</button>
   </form>
   <div class="auth-links"><span>Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></span></div>

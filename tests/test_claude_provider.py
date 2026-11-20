@@ -55,7 +55,7 @@ class ProviderTests(unittest.TestCase):
         with self.app.app_context():
             db.create_all()
         self.client.post("/auth/register", data={"full_name": "Owner", "email": "o@example.com",
-            "business_name": "Example Ltd", "password": "a-very-strong-password-123"})
+            "business_name": "Example Ltd", "password": "a-very-strong-password-123", "accept_terms": "yes"})
         self.ctx = self.app.app_context(); self.ctx.push()
         self.tid = TenantSubscription.query.first().tenant_id
         self.claude = mock.Mock(); self.openai = mock.Mock()

@@ -71,6 +71,23 @@ On a job's page: the brief, the Coordinator's plan, each specialist's contributi
 
 Every job counts towards the task allowance: **Starter 100**, **Growth 500**, **Business 2,000** per billing period. During the free trial there is also a daily allowance of **5 assignments a day**, renewed at midnight (GMT), so the trial lasts the full 14 days; the dashboard shows how many are left today. Jobs that fail because the AI service itself was unavailable are **not** counted. A job stuck on Queued usually means the background worker is down — tell the platform owner.
 
+## Templates, repeating assignments and downloads
+- **Start from a template** (above the assignment form on [[page:home]]) fills in a ready-made assignment: marketing plan, social media posts, complaint reply, customer FAQ, job advert, staff policy, cash-flow forecast, pricing, proposal, competitor check, procedures (SOP) or donor report. Replace everything in [square brackets] with your own details; the app won't send it until you do.
+- **Repeat**: choose Every day, Every week or Every month and a time (Ghana time) before sending. The team then does the assignment again automatically; each run counts towards your allowance. See, pause or delete them under **Repeating assignments** on [[page:home]].
+- **Download Word** on a finished assignment gives a .docx file; **Download Excel** appears when the response contains tables and gives an .xlsx with real numbers you can calculate with.
+- When email is set up, the person who sent an assignment gets an email when it's ready (or if it couldn't be finished).
+
+## Team members
+Owners and Admins open [[page:team]] to invite colleagues by email with a role: **Admin** (everything except data export; only the Owner can invite Admins), **Manager** (assigns work, manages AI employees and documents) or **Employee** (views work and documents). If email isn't set up, you get a link to send by WhatsApp or SMS; it works once, for 7 days. You can change roles or remove people at any time; their past work stays.
+
+## Website chat (customer chatbot)
+Owners and Admins open [[page:website_chat]] to put a chat button on the business's own website:
+1. Give the **Customer Service Officer** access to a knowledge folder with your prices, opening hours, delivery and FAQs (the chatbot answers only from those documents).
+2. Set the chatbot's name, greeting, what to tell customers when it doesn't know (e.g. your phone/WhatsApp), and your website address.
+3. Use **Preview** to try it, then **Turn on**.
+4. Copy the one-line code and paste it before </body> on your website (or send it to your web designer).
+Every chat appears under **Recent customer chats**. It never takes payments, orders or promises. Free trial: 100 answers a day; paid plans: 1,000. WhatsApp needs a verified Meta business account; ask Kayron.
+
 ## Charts, presentations and graphics
 When an assignment is **Completed**, open it and scroll to **Turn this into visuals** (Owners, Admins, Managers):
 - **Charts**: bar, line or pie charts of the figures in the response, as PNG images. If the response has no figures, you'll be told so.
@@ -126,7 +143,7 @@ Plans (prices set by the platform owner, in GHS per month):
 Every new workspace starts on a **14-day free trial**: the whole team of up to 10 active AI employees, 5 assignments a day. Afterwards, choose a plan to continue.
 
 On [[page:billing]]: current plan, limits, tasks used this period and when the trial or period ends.
-- **Upgrade**: pick a **Payment provider** on a plan and tap **Choose plan**; you pay on the provider's page and the plan switches on after payment is confirmed. (Online payment works only once the platform owner has connected Paystack or Stripe.)
+- **Upgrade**: tap **Subscribe** (during the trial) or **Choose plan** and pay with **Mobile Money (MTN MoMo, Telecel Cash, AT Money) or card** on Paystack's page; you pay on the provider's page and the plan switches on after payment is confirmed. (Online payment works only once the platform owner has connected Paystack or Stripe.)
 - **Cancel at period end** stops renewal; access continues until the date shown. You can undo it before then.
 - **Payment history** and **Invoices** list past payments.
 - Only Owners and Admins can change or cancel the plan.

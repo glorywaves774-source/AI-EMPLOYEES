@@ -109,6 +109,13 @@ def create_app(config_class=Config):
     from .help.routes import rate_limit_key
     limiter.limit("10 per minute;100 per day", key_func=rate_limit_key)(help_bp)
     app.register_blueprint(help_bp)
+    from .legal import legal_bp
+    from .team import team_bp
+    app.register_blueprint(team_bp)
+    from .widget import widget_bp
+    limiter.limit("20 per minute;400 per day")(widget_bp)
+    app.register_blueprint(widget_bp)
+    app.register_blueprint(legal_bp)
 
     @app.context_processor
     def ui_context():
@@ -205,6 +212,17 @@ def create_app(config_class=Config):
         from .billing.services import process_subscription_expirations
         count = process_subscription_expirations()
         print(f"Expired {count} subscription(s).")
+        # The same hourly job starts recurring assignments that are due.
+        from .workforce.recurring import run_due
+        started, skipped = run_due()
+        print(f"Recurring assignments: {started} started, {skipped} skipped.")
+
+    @app.cli.command("run-recurring-assignments")
+    def run_recurring_assignments_command():
+        """Start recurring assignments that are due (also run by the hourly job)."""
+        from .workforce.recurring import run_due
+        started, skipped = run_due()
+        print(f"Recurring assignments: {started} started, {skipped} skipped.")
 
     # Health probes are exempt from rate limiting: Render's checker polls every
     # few seconds from one internal IP, which exceeds the default per-IP limit

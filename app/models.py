@@ -143,6 +143,73 @@ class GeneratedAsset(db.Model):
     completed_at = db.Column(db.DateTime(timezone=True))
 
 
+class RecurringAssignment(db.Model):
+    """An assignment the AI team repeats on a schedule (times are Ghana time = GMT/UTC)."""
+    __tablename__ = "recurring_assignments"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    title = db.Column(db.String(180), nullable=False)
+    instructions = db.Column(db.Text, nullable=False)
+    frequency = db.Column(db.String(12), nullable=False)        # daily | weekly | monthly
+    weekday = db.Column(db.Integer, nullable=False, default=0)  # 0 = Monday (weekly)
+    day_of_month = db.Column(db.Integer, nullable=False, default=1)  # 1-28 (monthly)
+    hour = db.Column(db.Integer, nullable=False, default=8)     # 0-23 GMT
+    active = db.Column(db.Boolean, nullable=False, default=True, index=True)
+    next_run_at = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
+    last_run_at = db.Column(db.DateTime(timezone=True))
+    last_task_id = db.Column(db.Integer)
+    last_error = db.Column(db.String(300), nullable=False, default="")
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class TeamInvitation(db.Model):
+    """An invitation for someone to join a workspace with a given role."""
+    __tablename__ = "team_invitations"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    role = db.Column(db.String(32), nullable=False)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True)
+    invited_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    accepted_at = db.Column(db.DateTime(timezone=True))
+    revoked_at = db.Column(db.DateTime(timezone=True))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class ChatWidget(db.Model):
+    """A customer chatbot a business puts on its own website; answers from approved knowledge only."""
+    __tablename__ = "chat_widgets"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, unique=True)
+    public_key = db.Column(db.String(40), nullable=False, unique=True, index=True)
+    enabled = db.Column(db.Boolean, nullable=False, default=False)
+    bot_name = db.Column(db.String(60), nullable=False, default="Assistant")
+    greeting = db.Column(db.String(300), nullable=False, default="Hello! How can I help you today?")
+    contact_note = db.Column(db.String(300), nullable=False, default="")
+    brand_color = db.Column(db.String(7), nullable=False, default="#1a5fc2")
+    allowed_origins = db.Column(db.Text, nullable=False, default="")
+    employee_id = db.Column(db.Integer, db.ForeignKey("ai_employees.id", ondelete="SET NULL"))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class WidgetMessage(db.Model):
+    """One turn of a website chat, kept so the business can review what customers asked."""
+    __tablename__ = "widget_messages"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    widget_id = db.Column(db.Integer, db.ForeignKey("chat_widgets.id", ondelete="CASCADE"), nullable=False, index=True)
+    session_id = db.Column(db.String(40), nullable=False, index=True)
+    question = db.Column(db.String(1000), nullable=False)
+    answer = db.Column(db.Text, nullable=False, default="")
+    origin = db.Column(db.String(200), nullable=False, default="")
+    input_tokens = db.Column(db.Integer, nullable=False, default=0)
+    output_tokens = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False, index=True)
+
+
 class WorkforceTask(db.Model):
     __tablename__ = "workforce_tasks"
     __table_args__ = (

@@ -7,6 +7,7 @@ from app.extensions import db, bcrypt
 from app.models import User, Tenant, TenantMembership, AuditLog, Department, AIEmployee, SecurityToken
 from app.billing.services import create_trial_subscription
 from app.workforce.profiles import STARTER_PROFILES
+from app.legal import LEGAL_VERSION
 from app.security_service import issue_token, consume_token, send_email, verify_mfa, setup_mfa, hash_token, as_utc
 from . import auth_bp
 
@@ -30,6 +31,7 @@ def register():
     if request.method=="POST":
         full_name=request.form.get("full_name","").strip(); email=request.form.get("email","").strip().lower(); business_name=request.form.get("business_name","").strip(); password=request.form.get("password","")
         if not all([full_name,email,business_name]) or len(password)<12: flash("Complete all fields. Passwords must contain at least 12 characters.","error"); return render_template("auth/register.html")
+        if request.form.get("accept_terms")!="yes": flash("Please agree to the terms of use and privacy policy to create a workspace.","error"); return render_template("auth/register.html")
         if User.query.filter_by(email=email).first(): flash("An account with that email already exists.","error"); return render_template("auth/register.html")
         base=slugify(business_name); slug,suffix=base,1
         while Tenant.query.filter_by(slug=slug).first(): suffix+=1; slug=f"{base}-{suffix}"
@@ -46,7 +48,7 @@ def register():
             for n,t,d in emps:
                 desc,resp,skills=STARTER_PROFILES[t]
                 db.session.add(AIEmployee(tenant_id=tenant.id,department_id=deps[d].id,name=n,job_title=t,description=desc,responsibilities_json=resp,skills_json=skills,status="active",is_system_template=True))
-            create_trial_subscription(tenant.id); db.session.add(AuditLog(tenant_id=tenant.id,actor_user_id=user.id,action="tenant.registered",target_type="tenant",target_id=str(tenant.id)))
+            create_trial_subscription(tenant.id); db.session.add(AuditLog(tenant_id=tenant.id,actor_user_id=user.id,action="tenant.registered",target_type="tenant",target_id=str(tenant.id),details_json={"accepted_terms_version":LEGAL_VERSION}))
             token=issue_token(user.id,"email_verification",current_app.config.get("EMAIL_VERIFICATION_HOURS",24)*60); db.session.commit()
             link=f"{(current_app.config.get('PUBLIC_BASE_URL') or request.host_url).rstrip('/')}{url_for('auth.verify_email',token=token)}"
             try:
@@ -76,7 +78,10 @@ def login():
             flash("Invalid credentials or account temporarily locked.","error"); return render_template("auth/login.html")
         user.failed_login_attempts=0; user.locked_until=None
         session.clear(); login_user(user)
+        invite=request.args.get("invite","")[:100]
+        if invite: session["pending_invite"]=invite
         if user.mfa_enabled: session["mfa_pending_user_id"]=user.id; session["mfa_pending"]=True; db.session.commit(); return redirect(url_for("auth.mfa_verify"))
+        if invite: db.session.commit(); return redirect(url_for("team.join", token=session.pop("pending_invite")))
         membership=TenantMembership.query.filter_by(user_id=user.id,status="active").first()
         if membership: session["active_tenant_id"]=membership.tenant_id; db.session.commit(); return redirect(url_for("workspace.dashboard"))
         logout_user()
@@ -87,7 +92,9 @@ def mfa_verify():
     if not current_user.is_authenticated or not session.get("mfa_pending"): return redirect(url_for("auth.login"))
     if request.method=="POST":
         if verify_mfa(current_user,request.form.get("code","").strip()):
-            session.pop("mfa_pending",None); session.pop("mfa_pending_user_id",None); membership=TenantMembership.query.filter_by(user_id=current_user.id,status="active").first()
+            session.pop("mfa_pending",None); session.pop("mfa_pending_user_id",None)
+            if session.get("pending_invite"): db.session.commit(); return redirect(url_for("team.join", token=session.pop("pending_invite")))
+            membership=TenantMembership.query.filter_by(user_id=current_user.id,status="active").first()
             if membership: session["active_tenant_id"]=membership.tenant_id; db.session.commit(); return redirect(url_for("workspace.dashboard"))
         flash("Invalid MFA code.","error")
     return render_template("auth/mfa.html")

@@ -20,11 +20,13 @@
 {%- set ep = request.endpoint or '' -%}
 {%- set tenant_nav = ui_role and ui_role != 'platform_admin' -%}
 {%- set nav_all = {
-  'home': ('workspace.dashboard', 'Home', 'home', ['workspace.dashboard', 'workforce.task_detail']),
+  'home': ('workspace.dashboard', 'Home', 'home', ['workspace.dashboard', 'workforce.task_detail', 'workforce.recurring_list']),
   'approvals': ('approvals.index', 'Approvals', 'approvals', ['approvals.index']),
   'knowledge': ('knowledge.index', 'Knowledge', 'knowledge', ['knowledge.index', 'knowledge.permissions', 'knowledge.search']),
   'integrations': ('knowledge.integrations', 'Integrations', 'integrations', ['knowledge.integrations']),
   'analytics': ('analytics.index', 'Analytics', 'analytics', ['analytics.index']),
+  'website_chat': ('widget.manage', 'Website chat', 'chat', ['widget.manage', 'widget.preview']),
+  'team': ('team.index', 'Team', 'team', ['team.index']),
   'billing': ('billing.index', 'Billing', 'billing', ['billing.index']),
 } -%}
 {#- only pages this person's role can open (app/help/pages.py) -#}
@@ -80,6 +82,7 @@
       {% for category, message in messages %}<div class="notice" role="status">{{ message }}</div>{% endfor %}
     {% endwith %}
     {% block content %}{% endblock %}
+    <footer class="site-footer"><a href="{{ url_for('legal.privacy') }}">Privacy</a><span aria-hidden="true">·</span><a href="{{ url_for('legal.terms') }}">Terms</a><span aria-hidden="true">·</span><span>{{ config.get('PLATFORM_NAME', 'Kayron Global Tech Services') }}</span></footer>
   </main>
 
   {% if tenant_nav %}

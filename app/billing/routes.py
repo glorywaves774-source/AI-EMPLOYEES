@@ -6,6 +6,7 @@ from decimal import Decimal
 from flask import flash, g, make_response, redirect, render_template, request, url_for, current_app, abort
 from flask_login import current_user, login_required
 from app.extensions import db
+from app.billing.services import configured_payment_providers
 from app.models import SubscriptionPlan, TenantSubscription, SubscriptionChangeRequest, Payment, Invoice, AuditLog
 from app.security import roles_required
 
@@ -80,7 +81,7 @@ def index():
     invoices = Invoice.query.filter_by(tenant_id=g.active_tenant_id).order_by(Invoice.issued_at.desc()).limit(20).all()
     usage = task_usage(g.active_tenant_id)
     plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.amount.asc()).all()
-    response = make_response(render_template("billing/index.html", subscription=sub, plans=plans, payments=payments, invoices=invoices, usage=usage))
+    response = make_response(render_template("billing/index.html", subscription=sub, plans=plans, payments=payments, invoices=invoices, usage=usage, providers=configured_payment_providers()))
     # "Choose plan" posts here, then redirects to the provider's checkout. Browsers apply
     # form-action to that redirect, so the checkout origins are allowed on this page only.
     response.headers["Content-Security-Policy"] = CHECKOUT_CSP
@@ -98,7 +99,7 @@ def subscribe(plan_id):
     if plan.amount <= 0:
         flash("This plan is not yet commercially configured. Platform administration must set its approved price first.", "error")
         return redirect(url_for("billing.index"))
-    if sub.plan_id == plan.id and sub.status in {"active", "trialing"}:
+    if sub.plan_id == plan.id and sub.status == "active":
         flash("That plan is already active.", "info")
         return redirect(url_for("billing.index"))
 
@@ -118,7 +119,8 @@ def subscribe(plan_id):
         invoice_number=f"INV-{datetime.now(timezone.utc):%Y%m%d}-{uuid.uuid4().hex[:8].upper()}",
         metadata_json={"change_request_id": change.id, "plan_code": plan.code},
     )
-    if payment.provider not in {"paystack", "stripe"}:
+    from .services import configured_payment_providers
+    if payment.provider not in {code for code, _ in configured_payment_providers()}:
         abort(400)
     db.session.add(payment)
     db.session.flush()
@@ -178,12 +180,30 @@ def resume():
 @billing_bp.get("/paystack/callback")
 @login_required
 def paystack_callback():
+    from .services import paystack_amount_matches, verify_paystack_transaction
     reference = request.args.get("reference", "")
     payment = Payment.query.filter_by(tenant_id=g.active_tenant_id, provider="paystack", provider_reference=reference).first()
-    if payment:
-        flash("Payment received by Paystack. Subscription activation will complete after secure server-side verification.", "info")
-    else:
+    if not payment:
         flash("Payment reference not found.", "error")
+        return redirect(url_for("billing.index"))
+    if payment.status == "paid":
+        flash("Payment confirmed. Your plan is active.", "success")
+        return redirect(url_for("billing.index"))
+    try:
+        data = verify_paystack_transaction(reference)
+    except Exception:
+        current_app.logger.exception("Paystack verification failed")
+        flash("We couldn't confirm the payment with Paystack yet. If money left your account, your plan will switch on automatically within a few minutes.", "info")
+        return redirect(url_for("billing.index"))
+    if data.get("status") == "success" and data.get("reference") == reference and paystack_amount_matches(payment, data):
+        _activate_payment(payment, "paystack.verify")
+        db.session.commit()
+        flash("Payment confirmed. Your plan is now active. Thank you!", "success")
+    elif data.get("status") in {"failed", "abandoned", "reversed"}:
+        payment.status = "failed"; db.session.commit()
+        flash("The payment did not go through. No money was taken; please try again.", "error")
+    else:
+        flash("Payment is still being processed. Your plan will switch on automatically once Paystack confirms it.", "info")
     return redirect(url_for("billing.index"))
 
 @billing_bp.post("/webhooks/paystack")
@@ -202,8 +222,12 @@ def paystack_webhook():
         reference = data.get("reference")
         payment = Payment.query.filter_by(provider="paystack", provider_reference=reference).first()
         if payment and event_type == "charge.success":
-            from .routes import _activate_payment
-            _activate_payment(payment, event_type)
+            from .services import paystack_amount_matches
+            if paystack_amount_matches(payment, data):
+                _activate_payment(payment, event_type)
+            else:
+                current_app.logger.error("Paystack amount/currency mismatch for %s", reference)
+                payment.metadata_json = {**(payment.metadata_json or {}), "mismatch": True}
         elif payment and event_type in {"refund.processed", "charge.refund"}:
             mark_payment_refunded(payment, data.get("amount", 0) / 100, event_type)
         webhook.status = "processed"

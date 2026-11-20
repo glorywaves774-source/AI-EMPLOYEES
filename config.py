@@ -60,6 +60,9 @@ class Config:
     VISUALS_DAILY_LIMIT = int(os.environ.get("VISUALS_DAILY_LIMIT", "40"))
     OPENAI_IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-2.5-flare")
     OPENAI_IMAGE_SIZE = os.environ.get("OPENAI_IMAGE_SIZE", "1024x1024")
+    # Website chat answers per business per UTC day.
+    WIDGET_TRIAL_DAILY_LIMIT = int(os.environ.get("WIDGET_TRIAL_DAILY_LIMIT", "100"))
+    WIDGET_DAILY_LIMIT = int(os.environ.get("WIDGET_DAILY_LIMIT", "1000"))
     TRIAL_DAILY_TOKEN_POOL = int(os.environ.get("TRIAL_DAILY_TOKEN_POOL", "2000000"))
     TEAM_EXECUTION_MAX_PARALLELISM = int(os.environ.get("TEAM_EXECUTION_MAX_PARALLELISM", "3"))
     TEAM_EXECUTION_COST_BUDGET_USD = os.environ.get("TEAM_EXECUTION_COST_BUDGET_USD") or None
@@ -89,6 +92,7 @@ class Config:
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
     SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
     SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USERNAME or "")
+    SMTP_USE_SSL = os.environ.get("SMTP_USE_SSL", "false").lower() == "true"  # port 465
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "http://localhost:5000")
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
 

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Team · AI Workforce{% endblock %}
+{% block content %}
+<p class="eyebrow">WORKSPACE</p><h1>Team</h1>
+<p class="muted">Invite colleagues to work with your AI team. Everyone signs in with their own email and password.</p>
+{% if new_link %}<section class="panel invite-link-panel" aria-live="polite"><h2>Send this link to {{ new_link.email }}</h2>
+<p class="muted">Email isn't set up yet, so copy this link and send it by WhatsApp or SMS. It works once, for 7 days.</p>
+<input class="invite-link" readonly value="{{ new_link.link }}" aria-label="Invitation link" data-select-on-focus></section>{% endif %}
+<section class="panel compact-form"><h2>Invite someone</h2>
+<form method="post" action="{{ url_for('team.invite') }}" class="invite-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Email address<input type="email" name="email" required maxlength="254" autocomplete="off" placeholder="colleague@business.com"></label>
+<label>Role<select name="role">{% for key, label in roles.items() %}{% if key != 'admin' or g.membership.role == 'owner' %}<option value="{{ key }}"{% if key == 'employee' %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}</select></label>
+<button class="primary" type="submit">{{ 'Send invitation' if email_ready else 'Create invitation link' }}</button></form>
+<ul class="role-help">{% for key, text in role_help.items() %}<li><strong>{{ key|capitalize }}:</strong> {{ text }}</li>{% endfor %}</ul></section>
+<section class="panel"><h2>Members ({{ members|length }})</h2><div class="member-list">
+{% for m in members %}<article class="member-row"><div><strong>{{ m.user.full_name }}</strong>{% if m.user_id == current_user.id %} <small class="muted">(you)</small>{% endif %}<br><small class="muted">{{ m.user.email }}</small></div>
+{% if m.role == 'owner' or m.user_id == current_user.id or (m.role == 'admin' and g.membership.role != 'owner') %}<span class="state">{{ m.role }}</span>{% else %}
+<div class="member-actions"><form method="post" action="{{ url_for('team.change_role', membership_id=m.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="role" aria-label="Role for {{ m.user.full_name }}" data-autosubmit>{% for key, label in roles.items() %}{% if key != 'admin' or g.membership.role == 'owner' %}<option value="{{ key }}"{% if m.role == key %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}</select></form>
+<form method="post" action="{{ url_for('team.remove', membership_id=m.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger" type="submit">Remove</button></form></div>{% endif %}
+</article>{% endfor %}</div></section>
+{% if invites %}<section class="panel"><h2>Waiting to join</h2><div class="member-list">{% for i in invites %}<article class="member-row"><div><strong>{{ i.email }}</strong><br><small class="muted">{{ roles[i.role] }} · expires {{ i.expires_at.strftime('%d %b %Y') }}</small></div>
+<form method="post" action="{{ url_for('team.revoke', invite_id=i.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" type="submit">Cancel invitation</button></form></article>{% endfor %}</div></section>{% endif %}
+{% endblock %}

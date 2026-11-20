@@ -36,7 +36,7 @@ class SmokeTests(unittest.TestCase):
             "full_name": "Test Owner",
             "email": "owner@example.test",
             "business_name": "Example Business",
-            "password": "a-very-long-test-password"
+            "password": "a-very-long-test-password", "accept_terms": "yes"
         }, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Example Business", response.data)

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Privacy policy · AI Workforce{% endblock %}
+{% block content %}
+<article class="panel legal-page">
+<p class="eyebrow">AI WORKFORCE · {{ c.company|upper }}</p>
+<h1>Privacy policy</h1>
+<p class="muted">Last updated {{ c.updated }}</p>
+
+<p>This policy explains what personal information AI Workforce collects, why, who we share it with and the choices you have. AI Workforce is provided by {{ c.company }} ("Kayron", "we"). We process personal data in line with Ghana's Data Protection Act, 2012 (Act 843).</p>
+
+<h2>Who is responsible</h2>
+<p>For your account, billing and use of the service, Kayron is the data controller. For the business information you and your colleagues put into your workspace (documents, assignments and anything about your own customers or staff), <strong>your business is the data controller and Kayron processes it on your behalf</strong>, only to provide the service.</p>
+
+<h2>What we collect</h2>
+<ul>
+<li><strong>Account details:</strong> name, email address, business name, password (stored only as a secure hash), two-step sign-in settings and your role in the workspace.</li>
+<li><strong>Workspace content:</strong> assignments you give the AI team, the results, documents you upload or choose from Google Drive, charts, presentations and graphics you create, and approval decisions.</li>
+<li><strong>Billing:</strong> your plan, payment references, amounts and invoice records. Card and Mobile Money details are entered on Paystack's or Stripe's own pages; we never see or store them.</li>
+<li><strong>Security and usage records:</strong> sign-in attempts, IP address, browser type, request IDs and an activity log of important actions, used to keep accounts safe and investigate problems.</li>
+<li><strong>Help chat (Kombian):</strong> the questions you type. Phone numbers, email addresses and ID numbers are removed before a question is sent to an AI service, and Kombian never sees your workspace records.</li>
+</ul>
+
+<h2>Why we use it</h2>
+<ul>
+<li>To provide AI Workforce: run assignments, store your documents and results, and show them only to your workspace.</li>
+<li>To take payments and keep accounting records.</li>
+<li>To send service emails, such as account verification, password resets, invitations and "your assignment is ready" notices.</li>
+<li>To keep the service secure, prevent misuse and meet legal obligations.</li>
+</ul>
+<p>We do <strong>not</strong> sell personal data, and we do not use your workspace content to advertise to you.</p>
+
+<h2>AI processing</h2>
+<p>To carry out assignments, the relevant text (the assignment, the specialist's role, and passages from documents you have allowed that AI employee to use) is sent to our AI providers, Anthropic (Claude) and OpenAI, through their business APIs. Photo-style images are made with OpenAI's image service. AI output can be wrong: results are drafts for a person in your business to check, and AI employees cannot send messages, make payments or publish anything by themselves.</p>
+
+<h2>Who we share it with</h2>
+<p>Only with service providers that help us run AI Workforce, under their business terms:</p>
+<ul>
+<li>Render (application hosting and database, Frankfurt, Germany)</li>
+<li>Amazon Web Services (encrypted document storage, Stockholm, Sweden)</li>
+<li>Anthropic and OpenAI (AI processing, United States)</li>
+<li>Google, only if you connect Google Drive (we can open only the files you pick)</li>
+<li>Paystack and Stripe (payments)</li>
+<li>Our email delivery provider (service emails)</li>
+</ul>
+<p>Because these providers are outside Ghana, your data is transferred abroad. We choose providers with strong security and send them only what is needed. We may also disclose information where the law requires it.</p>
+
+<h2>How we protect it</h2>
+<p>Connections use HTTPS. Uploaded documents and generated files are encrypted at rest. Every workspace is kept separate from every other. Two-step sign-in is available for all accounts, and important actions are logged.</p>
+
+<h2>How long we keep it</h2>
+<p>We keep workspace content while your account is open. Security event records are kept for about {{ config.get('SECURITY_EVENT_RETENTION_DAYS', 180) }} days. Billing records are kept as long as tax and accounting law requires. When a business closes its account, we delete its workspace content within 90 days, apart from records we must keep by law.</p>
+
+<h2>Your rights</h2>
+<p>Under Act 843 you can ask to see the personal data we hold about you, have it corrected or deleted, object to certain uses, and complain to the Data Protection Commission of Ghana (dataprotection.org.gh). Workspace owners can download their workspace data at any time from the app. To exercise your rights, contact us using the details below. If your request concerns data a business put into its workspace, we will pass it to that business.</p>
+
+<h2>Cookies</h2>
+<p>We use only the cookies needed to keep you signed in, protect forms and remember your light or dark theme. We do not use advertising or tracking cookies.</p>
+
+<h2>Children</h2>
+<p>AI Workforce is for businesses and organisations. It is not intended for anyone under 18.</p>
+
+<h2>Changes</h2>
+<p>If we make important changes, we will tell workspace owners by email or in the app before they take effect.</p>
+
+<h2>Contact</h2>
+{% include "legal/_contact.html" %}
+<p class="muted"><a href="{{ url_for('legal.terms') }}">Terms of use</a></p>
+</article>
+{% endblock %}

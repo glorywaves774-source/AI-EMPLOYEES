@@ -329,6 +329,28 @@ def mark_orphaned_wave_steps_failed(tenant_id, execution_id):
     return changed
 
 
+def _email_task_owner(task, ready, needs_review=False):
+    from app.models import User
+    from app.security_service import notify_by_email
+    user = db.session.get(User, task.created_by_user_id) if task.created_by_user_id else None
+    if not user:
+        return
+    base = (current_app.config.get("PUBLIC_BASE_URL") or "").rstrip("/")
+    link = f"{base}/workforce/tasks/{task.id}" if base else f"/workforce/tasks/{task.id}"
+    if ready:
+        subject = f"Ready for you: {task.title}"
+        body = (f"Hello {user.full_name or ''},\n\nYour AI team has finished \"{task.title}\".\n"
+                + ("It needs a quick human review before you use it.\n" if needs_review else "")
+                + f"\nOpen it here: {link}\n\nYou can also turn it into charts, a presentation, a graphic, "
+                "or download it as Word or Excel.\n\n— AI Workforce by Kayron Global Tech Services")
+    else:
+        subject = f"Couldn't finish: {task.title}"
+        body = (f"Hello {user.full_name or ''},\n\nYour AI team couldn't finish \"{task.title}\".\n"
+                f"Reason: {task.error_message or 'see the assignment page'}\n\nOpen it here: {link}\n\n"
+                "— AI Workforce by Kayron Global Tech Services")
+    notify_by_email(user.email, subject, body)
+
+
 def finalize_team_execution(tenant_id, execution_id):
     execution = TeamExecution.query.filter_by(id=execution_id, tenant_id=tenant_id).first()
     if not execution or execution.status != "running":
@@ -350,6 +372,8 @@ def finalize_team_execution(tenant_id, execution_id):
             task.status = "failed"; task.error_message = execution.error_message
             task.completed_at = datetime.now(timezone.utc)
         execution.completed_at = datetime.now(timezone.utc); db.session.commit()
+        if task:
+            _email_task_owner(task, ready=False)
         return {"status": "failed", "reason": "no_results"}
     contributions = "\n\n".join(f"SPECIALIST: {s.employee_name}\nTASK: {s.title}\nRESULT:\n{s.result_text}" for s in completed)
     report = "\n".join(f"- {s.title}: {s.status}" + (f" — {s.error_message}" if s.error_message else "") for s in steps)
@@ -403,6 +427,7 @@ def finalize_team_execution(tenant_id, execution_id):
             db.session.add(Notification(tenant_id=tenant_id, user_id=task.created_by_user_id,
                 title="AI team assignment completed", message=f"{task.title} is ready for review.", category="task"))
         db.session.commit()
+        _email_task_owner(task, ready=True, needs_review=execution.status == "needs_review")
         return {"status": execution.status, "task_id": task.id,
                 "completed_steps": len(completed), "outstanding_steps": len(outstanding)}
     except Exception as exc:

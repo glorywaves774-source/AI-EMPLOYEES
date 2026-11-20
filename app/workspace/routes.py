@@ -6,6 +6,8 @@ from app.extensions import db
 from app.models import TenantMembership, Department, AIEmployee, AuditLog, WorkforceTask
 from app.security import active_membership_required, roles_required
 from . import workspace_bp
+from app.models import RecurringAssignment
+from app.workforce.assignment_templates import TEMPLATES, BY_KEY as TEMPLATE_BY_KEY
 from app.billing.services import trial_summary, can_activate_employee
 
 @workspace_bp.before_request
@@ -40,7 +42,9 @@ def dashboard():
     return render_template("workspace/dashboard.html", tenant=g.active_tenant,
         departments=departments, employees=employees, recent_tasks=recent_tasks,
         active_count=sum(1 for e in employees if e.status == "active"),
-        trial=trial_summary(g.active_tenant_id))
+        trial=trial_summary(g.active_tenant_id), templates=TEMPLATES,
+        chosen_template=TEMPLATE_BY_KEY.get(request.args.get("template", "")),
+        recurring_count=RecurringAssignment.query.filter_by(tenant_id=g.active_tenant_id).count())
 
 @workspace_bp.post("/departments")
 @roles_required("owner", "admin", "manager")

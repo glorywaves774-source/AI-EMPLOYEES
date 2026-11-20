@@ -198,7 +198,12 @@ def trial_tokens_today():
              .join(TenantSubscription, TenantSubscription.tenant_id == AgentRun.tenant_id)
              .filter(TenantSubscription.status == "trialing", AgentRun.created_at >= _utc_midnight())
              .scalar())
-    return int(total or 0)
+    from app.models import WidgetMessage
+    chat = (db.session.query(db.func.coalesce(db.func.sum(WidgetMessage.input_tokens + WidgetMessage.output_tokens), 0))
+            .join(TenantSubscription, TenantSubscription.tenant_id == WidgetMessage.tenant_id)
+            .filter(TenantSubscription.status == "trialing", WidgetMessage.created_at >= _utc_midnight())
+            .scalar())
+    return int(total or 0) + int(chat or 0)
 
 
 def trial_summary(tenant_id):
@@ -303,6 +308,9 @@ def initialize_paystack(payment, customer_email, callback_url):
         "callback_url": callback_url,
         "metadata": {"tenant_id": payment.tenant_id, "payment_id": payment.id, "subscription_id": payment.subscription_id},
     }
+    if payment.currency == "GHS":
+        # Mobile Money (MTN MoMo, Telecel Cash, AT Money) and Visa/Mastercard.
+        payload["channels"] = ["mobile_money", "card"]
     result = _http_json(
         "https://api.paystack.co/transaction/initialize",
         "POST", payload, {"Authorization": f"Bearer {secret}"}
@@ -312,6 +320,34 @@ def initialize_paystack(payment, customer_email, callback_url):
     payment.metadata_json = {**(payment.metadata_json or {}), "authorization_url": result["data"]["authorization_url"]}
     db.session.commit()
     return result["data"]["authorization_url"]
+
+def paystack_amount_matches(payment, data):
+    """Paystack reports amounts in the smallest unit (pesewas)."""
+    try:
+        expected = int(Decimal(payment.amount) * 100)
+        return int(data.get("amount", -1)) == expected and str(data.get("currency", "")).upper() == payment.currency.upper()
+    except (TypeError, ValueError, ArithmeticError):
+        return False
+
+
+def verify_paystack_transaction(reference):
+    """Ask Paystack directly whether a payment succeeded (does not rely on the webhook)."""
+    secret = current_app.config.get("PAYSTACK_SECRET_KEY")
+    if not secret:
+        raise RuntimeError("PAYSTACK_SECRET_KEY is not configured.")
+    result = _http_json(f"https://api.paystack.co/transaction/verify/{urllib.parse.quote(reference, safe='')}",
+                        "GET", None, {"Authorization": f"Bearer {secret}"})
+    return result.get("data") or {}
+
+
+def configured_payment_providers():
+    providers = []
+    if current_app.config.get("PAYSTACK_SECRET_KEY"):
+        providers.append(("paystack", "Mobile Money or card (Paystack)"))
+    if current_app.config.get("STRIPE_SECRET_KEY"):
+        providers.append(("stripe", "International card (Stripe)"))
+    return providers
+
 
 def verify_paystack_signature(raw_body, signature):
     secret = current_app.config.get("PAYSTACK_SECRET_KEY")
