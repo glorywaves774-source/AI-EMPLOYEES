@@ -30,6 +30,11 @@
 </article>
 {% endfor %}
 </section>
+{% if subscription and subscription.status == 'active' and subscription.plan and subscription.plan.code in ['growth','business'] and g.membership.role in ['owner','admin'] %}
+<section class="panel compact-form video-pack"><h2>Extra AI video clips</h2>
+<p class="muted">Your plan includes {{ 20 if subscription.plan.code == 'growth' else 100 }} AI video clips a month. Need more? Buy {{ config.get('VIDEO_PACK_CLIPS', 10) }} extra clips for GHS {{ config.get('VIDEO_PACK_PRICE', '300') }}. They don't expire at the end of the month.</p>
+{% if providers %}<form method="post" action="{{ url_for('billing.buy_video_pack') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="primary" type="submit">Buy {{ config.get('VIDEO_PACK_CLIPS', 10) }} clips with Mobile Money or card</button></form>{% else %}<p class="muted">Online payment is being set up. Contact Kayron to buy extra clips.</p>{% endif %}
+</section>{% endif %}
 <section class="analytics-grid">
 <article class="panel"><h2>Payment history</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Provider</th><th>Reference</th><th>Amount</th><th>Status</th></tr></thead><tbody>
 {% for p in payments %}<tr><td>{{ p.created_at.strftime("%d %b %Y") }}</td><td>{{ p.provider|capitalize }}</td><td>{{ p.provider_reference[:20] }}</td><td>{{ p.currency }} {{ "%.2f"|format(p.amount|float) }}</td><td>{{ p.status|replace('_', ' ') }}</td></tr>{% else %}<tr><td colspan="5">No payment records yet.</td></tr>{% endfor %}

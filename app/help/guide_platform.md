@@ -99,3 +99,11 @@ Kombian only sees the question and this guide, never business records. Phone num
 
 ## Legal pages
 - /privacy and /terms are public and linked from sign-up and every page footer. Contact details come from LEGAL_PHONE, LEGAL_WHATSAPP, LEGAL_ADDRESS and LEGAL_EMAIL (optional). New businesses must tick that they agree; the version is recorded.
+
+
+## Video studio
+- Needs GEMINI_API_KEY (Google AI Studio, with billing) on the website and the worker: it powers speech-to-text for the editor and AI video generation (GEMINI_VIDEO_MODEL, default gemini-omni-1.1-flash; GEMINI_TEXT_MODEL for transcription). If Gemini isn't set, the editor falls back to OpenAI transcription when OpenAI has credit.
+- Clip planning and video descriptions use Claude. Video editing uses the bundled ffmpeg on the worker.
+- Allowances: VIDEO_EDITS_TRIAL/STARTER/GROWTH/BUSINESS (1/5/30/150) and VIDEO_CLIPS_* (0/0/20/100) per billing period. Packs: VIDEO_PACK_CLIPS (10) for VIDEO_PACK_PRICE (GHS 300), Growth and Business only.
+- Limits: VIDEO_MAX_UPLOAD_MB (200), VIDEO_MAX_MINUTES (15). Videos are stored in S3 under video/ with server-side encryption; originals are deleted after editing.
+- Video editing is memory-heavy: a 2 GB worker is recommended for regular use.

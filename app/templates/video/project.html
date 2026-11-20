@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ p.title or 'Video' }} · Video studio{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('video.index') }}">← Video studio</a>
+<p class="eyebrow">{{ 'AI VIDEO' if p.mode == 'generate' else 'SOCIAL MEDIA EDIT' }}</p><h1>{{ p.title or 'Video' }}</h1>
+{% if p.status in ['queued','running'] %}<div class="panel video-progress" role="status"><span class="state state-running">working</span><p><strong>{{ p.progress or 'Waiting to start…' }}</strong><br><span class="muted">This page doesn't update by itself. <a href="{{ url_for('video.project', project_id=p.id) }}">Refresh</a> to check, or wait for the email.</span></p></div>
+{% elif p.status == 'failed' %}<p class="notice">{{ p.error_message }}</p>
+{% endif %}
+{% if p.brief %}<p class="muted"><strong>{{ 'Idea' if p.mode == 'generate' else 'Focus' }}:</strong> {{ p.brief }}</p>{% endif %}
+<div class="video-grid">{% for o in outputs %}<article class="panel video-card" id="out-{{ o.id }}">
+<video controls preload="metadata" playsinline class="video-{{ 'tall' if o.platform == 'vertical' or (o.platform == 'generated' and p.options_json.get('aspect') == '9:16') else 'wide' }}" src="{{ url_for('video.file', output_id=o.id) }}"></video>
+<div class="run-head"><h2>{{ o.title }}</h2><span class="state state-{{ o.review_status if o.review_status != 'pending' else 'ready' }}">{{ 'draft' if o.review_status == 'pending' else o.review_status }}</span></div>
+<small class="muted">{{ labels.get(o.platform, o.platform) }} · {{ '%.0f'|format(o.duration_seconds) }} s · {{ (o.size_bytes / 1048576)|round(1) }} MB</small>
+{% if o.post_text %}<label class="post-text">Post text<textarea readonly rows="4" data-select-on-focus>{{ o.post_text }}</textarea></label>{% endif %}
+<div class="asset-actions"><a class="secondary-button" href="{{ url_for('video.file', output_id=o.id, download=1) }}" download>Download MP4</a>
+{% if o.review_status == 'pending' and g.membership.role in ['owner','admin'] %}<form method="post" action="{{ url_for('video.review', output_id=o.id) }}" class="asset-review"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="primary" name="decision" value="approved">Approve</button><button class="danger" name="decision" value="rejected">Reject</button></form>{% endif %}</div>
+</article>{% endfor %}</div>
+{% if p.status == 'ready' and p.mode == 'edit' %}<p class="muted small-note">Check captions and post text before posting: speech recognition can mishear names and local words. Your original upload has been deleted; only these clips are kept.</p>{% endif %}
+{% endblock %}

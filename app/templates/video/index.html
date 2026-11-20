@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Video studio · AI Workforce{% endblock %}
+{% block content %}
+<p class="eyebrow">VIDEO STUDIO</p><h1>Videos for social media</h1>
+<p class="muted">Turn one video into ready-to-post clips for TikTok, Instagram Reels, YouTube Shorts and YouTube, or create a short AI video from a description. Every video is a draft for you to check; nothing is posted for you.</p>
+<div class="metric-grid video-stats">
+<div class="panel stat"><span>Video edits this period</span><strong>{{ allowance.edit.used }} / {{ allowance.edit.allowed }}</strong></div>
+<div class="panel stat"><span>AI video clips this period</span><strong>{% if allowance.generate.allowed %}{{ allowance.generate.used }} / {{ allowance.generate.allowed }}{% else %}Growth &amp; Business{% endif %}</strong></div>
+{% if allowance.pack %}<div class="panel stat"><span>Extra clips bought</span><strong>{{ allowance.pack }}</strong></div>{% endif %}
+</div>
+{% if g.membership.role in ['owner','admin','manager'] %}
+<div class="visual-options video-options">
+<form class="panel visual-option" method="post" action="{{ url_for('video.create_edit') }}" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<h2>Edit a video for social media</h2>
+<p class="muted">Upload a talk, interview, event, tutorial or advert (up to {{ max_mb }} MB, {{ max_minutes }} minutes). The AI listens, picks the best moments, reframes them, adds captions and writes the post text.</p>
+<label>Video file<input type="file" name="video" accept="video/*" required></label>
+<label>Name <small class="muted">(optional)</small><input name="title" maxlength="180" placeholder="e.g. Product launch talk"></label>
+<label>What should the clips focus on? <small class="muted">(optional)</small><input name="brief" maxlength="2000" placeholder="e.g. the moments about our new prices"></label>
+<fieldset class="style-choice"><legend>Make clips for</legend>
+<label class="inline-choice"><input type="checkbox" name="platforms" value="vertical" checked> <span>TikTok, Reels, Shorts <small class="muted">(upright 9:16)</small></span></label>
+<label class="inline-choice"><input type="checkbox" name="platforms" value="youtube"> <span>YouTube <small class="muted">(wide 16:9)</small></span></label></fieldset>
+<div class="repeat-row"><label>How many clips<select name="clips">{% for n in [1,2,3,4,5] %}<option value="{{ n }}"{% if n == 3 %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+<label>Longest clip<select name="max_seconds">{% for s in [15,30,45,60,90] %}<option value="{{ s }}"{% if s == 45 %} selected{% endif %}>{{ s }} seconds</option>{% endfor %}</select></label></div>
+<label class="inline-choice"><input type="checkbox" name="captions" value="yes" checked> <span>Add captions <small class="muted">(most people watch without sound)</small></span></label>
+<button class="primary" type="submit">Upload and make clips</button>
+<small class="muted">Large files can take a while to upload on mobile data.</small></form>
+
+<form class="panel visual-option" method="post" action="{{ url_for('video.create_generate') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<h2>Create an AI video clip</h2>
+<p class="muted">Describe a short scene and the AI creates it: product shots, places, moods and B-roll for adverts. About 8–10 seconds per clip, no real people's faces, logos or famous characters.</p>
+{% if not generation_ready %}<p class="notice">Not switched on yet. Kayron needs to add the Google video key.</p>{% elif not allowance.generate.allowed and not allowance.pack %}<p class="notice">Included in the <a href="{{ url_for('billing.index') }}">Growth and Business plans</a> (20 and 100 clips a month).</p>{% endif %}
+<label>Describe the video<textarea name="idea" rows="4" maxlength="2000" required placeholder="e.g. Morning light over a busy Accra market, slow camera move past colourful fabric stalls"></textarea></label>
+<label>Name <small class="muted">(optional)</small><input name="title" maxlength="180"></label>
+<label>Shape<select name="aspect">{% for key, label in aspects.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+<button class="primary" type="submit"{% if not generation_ready %} disabled{% endif %}>Create video</button></form>
+</div>{% endif %}
+
+<section class="panel"><h2>Your videos</h2>
+{% for p in projects %}<a class="task-row video-row" href="{{ url_for('video.project', project_id=p.id) }}"><div><strong>{{ p.title or ('AI video' if p.mode == 'generate' else 'Video edit') }}</strong><small class="muted">{{ 'AI video' if p.mode == 'generate' else 'Social media edit' }} · {{ p.created_at.strftime('%d %b %Y, %H:%M') }}</small></div><span class="state state-{{ 'running' if p.status in ['queued','running'] else ('completed' if p.status == 'ready' else p.status) }}">{{ 'working' if p.status in ['queued','running'] else p.status }}</span></a>
+{% else %}<p class="muted">No videos yet.</p>{% endfor %}</section>
+{% endblock %}
