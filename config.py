@@ -39,7 +39,17 @@ class Config:
 
     CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
-    TEAM_EXECUTION_TOKEN_BUDGET = int(os.environ.get("TEAM_EXECUTION_TOKEN_BUDGET", "12000"))
+    # A team task = planner + up to TEAM_MAX_STEPS specialists + a final summary.
+    # 12k tokens was too small for more than ~2 specialists; 60k fits 5 comfortably.
+    TEAM_EXECUTION_TOKEN_BUDGET = int(os.environ.get("TEAM_EXECUTION_TOKEN_BUDGET", "60000"))
+    TEAM_MAX_STEPS = int(os.environ.get("TEAM_MAX_STEPS", "5"))
+    OPENAI_MAX_OUTPUT_TOKENS = int(os.environ.get("OPENAI_MAX_OUTPUT_TOKENS", "3000"))
+    # Free trial: whole workforce for 14 days, paced so one workspace cannot drain the AI balance.
+    TRIAL_OPENAI_MODEL = os.environ.get("TRIAL_OPENAI_MODEL") or None  # defaults to OPENAI_MODEL
+    TRIAL_MAX_AI_EMPLOYEES = int(os.environ.get("TRIAL_MAX_AI_EMPLOYEES", "10"))
+    TRIAL_DAILY_TASK_LIMIT = int(os.environ.get("TRIAL_DAILY_TASK_LIMIT", "5"))
+    # Shared ceiling for all trial workspaces together per UTC day (0 = no ceiling).
+    TRIAL_DAILY_TOKEN_POOL = int(os.environ.get("TRIAL_DAILY_TOKEN_POOL", "2000000"))
     TEAM_EXECUTION_MAX_PARALLELISM = int(os.environ.get("TEAM_EXECUTION_MAX_PARALLELISM", "3"))
     TEAM_EXECUTION_COST_BUDGET_USD = os.environ.get("TEAM_EXECUTION_COST_BUDGET_USD") or None
 

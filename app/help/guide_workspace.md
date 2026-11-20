@@ -17,7 +17,7 @@ There is no screen for inviting staff yet, so today each workspace has one user:
 
 ## Signing up and signing in
 1. Open the business sign-up page (/auth/register). Enter full name, work email, business name and a password of at least 12 characters, then tap **Create workspace**.
-2. You land on [[page:home]] straight away. The 14-day Starter trial starts immediately.
+2. You land on [[page:home]] straight away. The **14-day free trial** starts immediately, with all ten starter AI employees already switched on and ready for work.
 3. Next time, sign in at /auth/login. Five wrong passwords lock the account for 15 minutes.
 4. **Forgot password?** on the sign-in page sends a reset link (only once the platform owner has set up email).
 5. The platform owner's admin account is separate and does NOT work on the business sign-in page.
@@ -37,12 +37,15 @@ Every new workspace gets 9 departments and 10 AI employees, all starting as **Dr
 | AI Research Officer | Research |
 | AI Software Developer | Technology |
 
-## Switching AI employees on (required before any work)
+## Switching AI employees on or off
+New workspaces start with the whole team active, so you can assign work at once. Assignments need the **AI Team Coordinator** plus at least one specialist to be Active.
 1. On [[page:home]], scroll to **AI employees**.
 2. On the **AI Team Coordinator** card, change the menu at the bottom from **Draft** to **Active**. The page reloads and the badge turns green.
 3. Do the same for one or more specialists who fit the work.
 - Statuses: **Draft** (set up, not working), **Active** (can be given work), **Paused** (temporarily off; frees a place).
-- Active employees allowed at once: **Starter 3**, **Growth 10**, **Business 30**. The Coordinator counts as one.
+- Active employees allowed at once: **free trial 10**, **Starter 3**, **Growth 10**, **Business 30**. The Coordinator counts as one.
+- When a trial becomes a paid Starter plan, pause employees until no more than 3 are Active; assignments are blocked until then.
+- **Edit details** on an employee card changes its name, job title, department and description (Owners, Admins, Managers). A clear description helps the Coordinator give it the right work.
 - If you see "Activate the Team Coordinator and at least one specialist before assigning work", switch them on first.
 - If you see "Your … plan allows up to N active AI employees", pause one or upgrade on [[page:billing]].
 - Owners, Admins and Managers can change statuses.
@@ -66,7 +69,7 @@ On a job's page: the brief, the Coordinator's plan, each specialist's contributi
 - **Cancel assignment** stops a queued job at once; a running job stops after its current step.
 - **Retry eligible failed steps** re-runs only the failed parts; finished parts are kept.
 
-Every job counts towards the monthly task allowance: **Starter 100**, **Growth 500**, **Business 2,000** per billing period. A job stuck on Queued usually means the background worker is down — tell the platform owner.
+Every job counts towards the task allowance: **Starter 100**, **Growth 500**, **Business 2,000** per billing period. During the free trial there is also a daily allowance of **5 assignments a day**, renewed at midnight (GMT), so the trial lasts the full 14 days; the dashboard shows how many are left today. Jobs that fail because the AI service itself was unavailable are **not** counted. A job stuck on Queued usually means the background worker is down — tell the platform owner.
 
 ## Approvals
 [[page:approvals]] is the record of who signed off on what. Approving only records a decision; nothing is carried out automatically.
@@ -110,7 +113,7 @@ Plans (prices set by the platform owner, in GHS per month):
 | Starter | GHS 450 | 3 | 100 |
 | Growth | GHS 2,200 | 10 | 500 |
 | Business | GHS 8,500 | 30 | 2,000 |
-Every new workspace starts on a **14-day Starter trial**.
+Every new workspace starts on a **14-day free trial**: the whole team of up to 10 active AI employees, 5 assignments a day. Afterwards, choose a plan to continue.
 
 On [[page:billing]]: current plan, limits, tasks used this period and when the trial or period ends.
 - **Upgrade**: pick a **Payment provider** on a plan and tap **Choose plan**; you pay on the provider's page and the plan switches on after payment is confirmed. (Online payment works only once the platform owner has connected Paystack or Stripe.)
@@ -139,6 +142,9 @@ On [[page:billing]]: current plan, limits, tasks used this period and when the t
 | "Your subscription is not active" | Choose a plan on [[page:billing]], or ask the platform owner |
 | Job stuck on Queued | The background worker may be down; tell the platform owner |
 | Job Failed | Open it, read the message, tap **Retry eligible failed steps** |
+| "The AI service is temporarily unavailable" | A problem on the platform side (Kayron is alerted). It is not counted against your allowance; try again later |
+| "Your free trial includes 5 assignments a day" | The daily trial allowance is used up; it renews at midnight (GMT), or choose a plan |
+| "Free-trial capacity for today is fully booked" | Trial capacity is shared and renews at midnight (GMT), or choose a plan |
 | "Invalid credentials or account temporarily locked" | Check you're on the business sign-in page and the password; wait 15 minutes after 5 failures |
 | No verification or reset email | Email isn't set up yet; ask the platform owner |
 | 502 Bad Gateway | The site is restarting; wait 2 minutes |

@@ -26,6 +26,13 @@ Page references are written like [[page:admin]]. The platform owner manages ever
 
 ## Subscription statuses
 - **trialing** — free 14-day trial from sign-up
+
+## Free trial and AI credit
+- Every new business gets the whole team (all 10 starter AI employees switched on) for 14 days, with 5 assignments a day per business (Render setting TRIAL_DAILY_TASK_LIMIT).
+- All trial businesses together share a daily AI ceiling of 2,000,000 tokens (TRIAL_DAILY_TOKEN_POOL; 0 turns it off). When reached, new trial assignments wait until midnight GMT; paying businesses are never affected. This protects the OpenAI balance from being drained by trials.
+- TRIAL_OPENAI_MODEL (optional) runs trial work on a cheaper OpenAI model; paid businesses use OPENAI_MODEL.
+- Each assignment may use up to 60,000 tokens (TEAM_EXECUTION_TOKEN_BUDGET) and up to 5 specialists (TEAM_MAX_STEPS).
+- If OpenAI refuses work for a platform reason (no credit, wrong key, unknown model), a yellow warning appears at the top of this admin page. Businesses see "The AI service is temporarily unavailable" and those failed jobs are not counted against their allowance. Top up at platform.openai.com → Settings → Billing; turning on auto-recharge there prevents it happening again.
 - **active** — paid and running (also use this to give a business free access)
 - **past_due** — a payment failed
 - **canceled** — stopped (use this to stop a business that hasn't paid)

@@ -133,6 +133,44 @@ def ensure_tenant_subscription(tenant_id):
         return sub
     return create_trial_subscription(tenant_id)
 
+# Failures caused by the AI provider (for example the platform's OpenAI balance
+# running out) are the platform's problem, not the client's: they never count
+# against an allowance. ai_engine prefixes those task errors with this marker.
+AI_SERVICE_UNAVAILABLE = "The AI service is temporarily unavailable"
+
+
+def _cfg(name, default):
+    try:
+        value = current_app.config.get(name, default)
+        return default if value is None else value
+    except RuntimeError:
+        return default
+
+
+def is_trial(sub):
+    return bool(sub and sub.status == "trialing")
+
+
+def employee_limit(sub):
+    """Trials get the whole starter workforce; paid plans use their own limit."""
+    if is_trial(sub):
+        return max(sub.plan.max_ai_employees, int(_cfg("TRIAL_MAX_AI_EMPLOYEES", 10)))
+    return sub.plan.max_ai_employees
+
+
+def _counted_tasks(tenant_id):
+    from app.models import WorkforceTask
+    return WorkforceTask.query.filter(
+        WorkforceTask.tenant_id == tenant_id,
+        ~db.and_(WorkforceTask.status == "failed",
+                 db.func.coalesce(WorkforceTask.error_message, "").like(AI_SERVICE_UNAVAILABLE + "%")))
+
+
+def _utc_midnight():
+    now = datetime.now(timezone.utc)
+    return now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 def task_usage(tenant_id):
     sub = current_subscription(tenant_id)
     if not sub:
@@ -140,12 +178,39 @@ def task_usage(tenant_id):
     from app.models import WorkforceTask
     start = sub.current_period_start
     end = sub.current_period_end
-    q = WorkforceTask.query.filter(WorkforceTask.tenant_id == tenant_id)
+    q = _counted_tasks(tenant_id)
     if start:
         q = q.filter(WorkforceTask.created_at >= start)
     if end:
         q = q.filter(WorkforceTask.created_at < end)
     return q.count()
+
+
+def tasks_today(tenant_id):
+    from app.models import WorkforceTask
+    return _counted_tasks(tenant_id).filter(WorkforceTask.created_at >= _utc_midnight()).count()
+
+
+def trial_tokens_today():
+    """AI tokens used today by all workspaces that are on a free trial."""
+    from app.models import AgentRun
+    total = (db.session.query(db.func.coalesce(db.func.sum(AgentRun.input_tokens + AgentRun.output_tokens), 0))
+             .join(TenantSubscription, TenantSubscription.tenant_id == AgentRun.tenant_id)
+             .filter(TenantSubscription.status == "trialing", AgentRun.created_at >= _utc_midnight())
+             .scalar())
+    return int(total or 0)
+
+
+def trial_summary(tenant_id):
+    """Figures for the trial banner; None when the workspace is not on a trial."""
+    sub = current_subscription(tenant_id)
+    if not is_trial(sub):
+        return None
+    ends = as_utc(sub.trial_ends_at) if sub.trial_ends_at else None
+    days_left = max(0, (ends - datetime.now(timezone.utc)).days + 1) if ends else None
+    return {"daily_limit": int(_cfg("TRIAL_DAILY_TASK_LIMIT", 5)), "used_today": tasks_today(tenant_id),
+            "ends_at": ends, "days_left": days_left, "employee_limit": employee_limit(sub)}
+
 
 def can_create_task(tenant_id):
     sub = current_subscription(tenant_id)
@@ -154,6 +219,20 @@ def can_create_task(tenant_id):
     used = task_usage(tenant_id)
     if used >= sub.plan.monthly_task_limit:
         return False, f"You have reached the {sub.plan.name} plan task quota ({sub.plan.monthly_task_limit} tasks for this billing period)."
+    from app.models import AIEmployee
+    active = AIEmployee.query.filter_by(tenant_id=tenant_id, status="active").count()
+    if active > employee_limit(sub):
+        return False, (f"Your {sub.plan.name} plan allows {sub.plan.max_ai_employees} active AI employees and "
+                       f"{active} are active. Pause some on the dashboard, or upgrade, to continue.")
+    if is_trial(sub):
+        daily = int(_cfg("TRIAL_DAILY_TASK_LIMIT", 5))
+        if daily and tasks_today(tenant_id) >= daily:
+            return False, (f"Your free trial includes {daily} assignments a day so it lasts the full 14 days. "
+                           "Your allowance renews at midnight (GMT), or choose a plan to keep going today.")
+        pool = int(_cfg("TRIAL_DAILY_TOKEN_POOL", 0))
+        if pool and trial_tokens_today() >= pool:
+            return False, ("Free-trial capacity for today is fully booked. It renews at midnight (GMT), "
+                           "or choose a plan to keep going today.")
     return True, ""
 
 def can_activate_employee(tenant_id):
@@ -162,7 +241,10 @@ def can_activate_employee(tenant_id):
         return False, "Your subscription is not active. Choose a plan to continue."
     from app.models import AIEmployee
     active = AIEmployee.query.filter_by(tenant_id=tenant_id, status="active").count()
-    if active >= sub.plan.max_ai_employees:
+    limit = employee_limit(sub)
+    if active >= limit:
+        if is_trial(sub):
+            return False, f"Your free trial allows up to {limit} active AI employees."
         return False, f"Your {sub.plan.name} plan allows up to {sub.plan.max_ai_employees} active AI employees."
     return True, ""
 

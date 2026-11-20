@@ -6,7 +6,7 @@ from app.extensions import db
 from app.models import TenantMembership, Department, AIEmployee, AuditLog, WorkforceTask
 from app.security import active_membership_required, roles_required
 from . import workspace_bp
-from app.billing.services import can_activate_employee
+from app.billing.services import trial_summary, can_activate_employee
 
 @workspace_bp.before_request
 def load_tenant_context():
@@ -39,7 +39,8 @@ def dashboard():
     recent_tasks = WorkforceTask.query.filter_by(tenant_id=g.active_tenant_id).order_by(WorkforceTask.created_at.desc()).limit(8).all()
     return render_template("workspace/dashboard.html", tenant=g.active_tenant,
         departments=departments, employees=employees, recent_tasks=recent_tasks,
-        active_count=sum(1 for e in employees if e.status == "active"))
+        active_count=sum(1 for e in employees if e.status == "active"),
+        trial=trial_summary(g.active_tenant_id))
 
 @workspace_bp.post("/departments")
 @roles_required("owner", "admin", "manager")

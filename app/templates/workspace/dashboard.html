@@ -7,7 +7,7 @@
 
 <section class="section-head"><div><p class="eyebrow">WORKFORCE COMMAND</p><h2>Assign work to your AI team</h2><p class="muted">The Team Coordinator selects active specialists, gathers their contributions and prepares a consolidated result.</p></div></section>
 {% if g.membership.role in ['owner','admin','manager'] %}
-<form class="panel task-form" method="post" action="{{ url_for('workforce.execute') }}">
+{% if trial %}<p class="notice trial-note">Free trial: {{ trial.days_left }} day{{ '' if trial.days_left == 1 else 's' }} left, with your whole team of up to {{ trial.employee_limit }} AI employees. You've used {{ trial.used_today }} of {{ trial.daily_limit }} assignments today; this renews every midnight (GMT).</p>{% endif %}<form class="panel task-form" method="post" action="{{ url_for('workforce.execute') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>Assignment title<input name="title" maxlength="180" required placeholder="e.g. Prepare our quarterly growth plan"></label>
   <label>Assignment details<textarea name="instructions" rows="5" maxlength="8000" required placeholder="Explain the objective, context, constraints and expected output..."></textarea></label>
