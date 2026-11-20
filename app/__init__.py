@@ -220,6 +220,8 @@ def create_app(config_class=Config):
         from .billing.services import process_subscription_expirations
         count = process_subscription_expirations()
         print(f"Expired {count} subscription(s).")
+        from .billing.services import close_abandoned_payments
+        print(f"Closed {close_abandoned_payments()} unpaid checkout(s).")
         # The same hourly job starts recurring assignments that are due.
         from .workforce.recurring import run_due
         started, skipped = run_due()

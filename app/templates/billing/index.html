@@ -7,7 +7,7 @@
 <article class="metric-card"><span>Current plan</span><strong>{{ subscription.plan.name }}</strong><small>{{ subscription.status|capitalize }}</small></article>
 <article class="metric-card"><span>AI employees</span><strong>{{ subscription.plan.max_ai_employees }}</strong><small>Maximum active employees</small></article>
 <article class="metric-card"><span>Task quota</span><strong>{{ "{:,}".format(usage) }}</strong><small>of {{ "{:,}".format(subscription.plan.monthly_task_limit) }} this period</small></article>
-<article class="metric-card"><span>Trial / period ends</span><strong>{{ (subscription.trial_ends_at or subscription.current_period_end).strftime("%d %b %Y") if (subscription.trial_ends_at or subscription.current_period_end) else "—" }}</strong><small>{{ subscription.provider|capitalize }}</small></article>
+{% set on_trial = subscription.status == 'trialing' %}{% set ends = subscription.trial_ends_at if on_trial else subscription.current_period_end %}<article class="metric-card"><span>{{ 'Trial ends' if on_trial else ('Ends' if subscription.cancel_at_period_end or subscription.status in ['canceled', 'expired'] else 'Current period ends') }}</span><strong>{{ ends.strftime("%d %b %Y") if ends else "—" }}</strong><small>{{ subscription.provider|capitalize }}</small></article>
 </section>
 {% endif %}
 {% if subscription and subscription.status in ["trialing","active"] %}
@@ -37,7 +37,7 @@
 </section>{% endif %}
 <section class="analytics-grid">
 <article class="panel"><h2>Payment history</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Provider</th><th>Reference</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-{% for p in payments %}<tr><td>{{ p.created_at.strftime("%d %b %Y") }}</td><td>{{ p.provider|capitalize }}</td><td>{{ p.provider_reference[:20] }}</td><td>{{ p.currency }} {{ "%.2f"|format(p.amount|float) }}</td><td>{{ p.status|replace('_', ' ') }}</td></tr>{% else %}<tr><td colspan="5">No payment records yet.</td></tr>{% endfor %}
+{% for p in payments %}<tr><td>{{ p.created_at.strftime("%d %b %Y") }}</td><td>{{ p.provider|capitalize }}</td><td>{{ p.provider_reference[:20] }}</td><td>{{ p.currency }} {{ "%.2f"|format(p.amount|float) }}</td><td>{{ {'abandoned': 'not completed'}.get(p.status, p.status|replace('_', ' ')) }}</td></tr>{% else %}<tr><td colspan="5">No payment records yet.</td></tr>{% endfor %}
 </tbody></table></div></article>
 <article class="panel"><h2>Invoices</h2><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Period</th><th>Amount</th><th>Status</th></tr></thead><tbody>
 {% for inv in invoices %}<tr><td>{{ inv.invoice_number }}</td><td>{{ inv.period_start.strftime("%d %b") if inv.period_start else "—" }}{% if inv.period_end %} – {{ inv.period_end.strftime("%d %b %Y") }}{% endif %}</td><td>{{ inv.currency }} {{ "%.2f"|format(inv.amount|float) }}</td><td>{{ inv.status|replace('_', ' ') }}</td></tr>{% else %}<tr><td colspan="4">No invoices yet.</td></tr>{% endfor %}
