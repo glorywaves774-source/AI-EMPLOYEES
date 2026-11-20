@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 from io import BytesIO
-from flask import abort, current_app, flash, g, redirect, render_template, request, send_file, url_for
+from flask import abort, current_app, flash, g, make_response, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from app.extensions import db
@@ -9,10 +9,11 @@ from app.models import (AIEmployee, AIEmployeeKnowledgePermission, AuditLog, Int
                         KnowledgeChunk, KnowledgeDocument, KnowledgeRepository)
 from app.knowledge.services import extract_document_text, chunk_text, search_tenant_knowledge
 from app.knowledge.storage import store_file, read_file, delete_file
+from app.knowledge.ingest import IngestError, ingest_document
 from app.security import active_membership_required, roles_required
 from . import knowledge_bp
 
-MAX_UPLOAD_BYTES = 12 * 1024 * 1024
+from app.knowledge.ingest import MAX_UPLOAD_BYTES  # noqa: E402
 
 @knowledge_bp.get("/")
 @login_required
@@ -61,54 +62,16 @@ def upload_document():
     if not upload or not upload.filename:
         flash("Choose a document to upload.", "error")
         return redirect(url_for("knowledge.index"))
-    original = secure_filename(upload.filename)[:255]
     data = upload.stream.read(MAX_UPLOAD_BYTES + 1)
-    if not data or len(data) > MAX_UPLOAD_BYTES:
-        flash("The document must be between 1 byte and 12 MB.", "error")
-        return redirect(url_for("knowledge.index"))
     repository_id = request.form.get("repository_id", type=int)
     repo = KnowledgeRepository.query.filter_by(id=repository_id, tenant_id=g.active_tenant_id).first() if repository_id else None
     if repo is None:
         flash("Choose a valid knowledge repository before uploading.", "error")
         return redirect(url_for("knowledge.index"))
     try:
-        mime_type, extracted = extract_document_text(original, data)
-    except ValueError as exc:
+        ingest_document(g.active_tenant_id, repo, current_user.id, upload.filename, data)
+    except IngestError as exc:
         flash(str(exc), "error")
-        return redirect(url_for("knowledge.index"))
-    except Exception:
-        current_app.logger.exception("Uploaded business document could not be parsed")
-        flash("The document is damaged, password-protected or could not be safely read.", "error")
-        return redirect(url_for("knowledge.index"))
-    key = uuid.uuid4().hex
-    try:
-        store_file(key, data)
-    except Exception:
-        current_app.logger.exception("Private document storage failed")
-        flash("Encrypted document storage is not configured or is unavailable. Ask the administrator to configure it.", "error")
-        return redirect(url_for("knowledge.index"))
-    doc = KnowledgeDocument(tenant_id=g.active_tenant_id, repository_id=repo.id,
-        uploaded_by_user_id=current_user.id, original_filename=original, storage_key=key,
-        mime_type=mime_type, file_size=len(data), sha256=hashlib.sha256(data).hexdigest(),
-        status="ready", extracted_chars=len(extracted))
-    db.session.add(doc)
-    try:
-        db.session.flush()
-        for index, piece in enumerate(chunk_text(extracted)):
-            db.session.add(KnowledgeChunk(tenant_id=g.active_tenant_id, document_id=doc.id,
-                                          chunk_index=index, content=piece))
-        db.session.add(AuditLog(tenant_id=g.active_tenant_id, actor_user_id=current_user.id,
-            action="knowledge.document_uploaded", target_type="knowledge_document", target_id=str(doc.id),
-            details_json={"filename": original, "size_bytes": len(data), "sha256": doc.sha256,
-                          "repository_id": repo.id, "chunks": len(chunk_text(extracted))}))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        try:
-            delete_file(key)
-        except Exception:
-            current_app.logger.exception("Could not clean up failed document upload")
-        flash("The document could not be indexed. Please try again.", "error")
         return redirect(url_for("knowledge.index"))
     flash("Document encrypted, stored and indexed. It is not available to AI employees until you grant repository access.", "success")
     return redirect(url_for("knowledge.permissions", repository_id=repo.id))
@@ -217,7 +180,12 @@ def integrations():
     connections = [{"provider": p, "status": existing[p].status if p in existing else "not_connected",
                     "updated_at": existing[p].updated_at if p in existing else None}
                    for p in ("google_drive", "email")]
-    return render_template("knowledge/integrations.html", connections=connections)
+    from .google_routes import PICKER_CSP, drive_view_state
+    drive = drive_view_state()
+    response = make_response(render_template("knowledge/integrations.html", connections=connections, drive=drive))
+    if drive["configured"] and drive["connected"]:
+        response.headers["Content-Security-Policy"] = PICKER_CSP  # Google Picker, this page only
+    return response
 
 
 @knowledge_bp.get("/search")

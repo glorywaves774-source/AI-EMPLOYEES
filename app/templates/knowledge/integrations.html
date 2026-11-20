@@ -1,28 +1,72 @@
 {% extends 'base.html' %}
 {% block title %}Integration Centre · AI Workforce{% endblock %}
 {% block content %}
+{%- set role = g.membership.role -%}
 <a class="back-link" href="{{ url_for('knowledge.index') }}">← Back to knowledge library</a>
 <div class="eyebrow">INTEGRATION CENTRE</div>
 <h1>External integrations</h1>
-<p class="muted">Connect business systems so authorised AI employees can work with your files and email. Live connections are coming in a later release; for now you can register interest and the request is recorded in your audit log. No external account is connected and no data leaves AI Workforce.</p>
+<p class="muted">Bring files from the tools your business already uses into its private knowledge library. AI employees can read imported files only after you grant them access to the folder.</p>
 <div class="grid">
-{% for c in connections %}
-<section class="panel">
-  <div class="icon">{% if c.provider == 'google_drive' %}◫{% else %}✉{% endif %}</div>
-  <h2>{{ 'Google Drive' if c.provider == 'google_drive' else 'Business Email' }}</h2>
+
+<section class="panel integration-card" id="google-drive">
+  <div class="icon" aria-hidden="true">◫</div>
+  <h2>Google Drive</h2>
+  {% if not drive.configured %}
+    <p>Status: <span class="status">not available yet</span></p>
+    <p class="small-note">The platform owner needs to add the Google settings before businesses can connect Drive.</p>
+    {% if role in ['owner','admin'] %}
+      {% if drive.status == 'setup_requested' %}<p class="small-note">You've registered interest.</p>
+      {% else %}<form method="post" action="{{ url_for('knowledge.request_integration_setup', provider='google_drive') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" type="submit">Request setup</button></form>{% endif %}
+    {% endif %}
+  {% elif not drive.connected %}
+    <p>Status: <span class="status">not connected</span></p>
+    <p class="small-note">You choose exactly which files to import with Google's file picker. AI Workforce can open only the files you pick, never the rest of your Drive.</p>
+    {% if role in ['owner','admin'] %}
+      <form method="post" action="{{ url_for('knowledge.google_connect') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="primary" type="submit">Connect Google Drive</button></form>
+    {% else %}
+      <p class="small-note">Ask a workspace Owner or Admin to connect it.</p>
+    {% endif %}
+  {% else %}
+    <p>Status: <span class="state state-active">connected</span>{% if drive.account %} as <strong translate="no">{{ drive.account }}</strong>{% endif %}</p>
+    {% if drive.last_import %}<p class="small-note">Last import: {{ drive.last_import }} UTC</p>{% endif %}
+    {% if role in ['owner','admin','manager'] %}
+      {% if drive.repositories %}
+      <div class="drive-import" data-drive-import data-token-url="{{ url_for('knowledge.google_picker_token') }}" data-import-url="{{ url_for('knowledge.google_import') }}">
+        <label>Import into knowledge folder
+          <select data-drive-repo>{% for r in drive.repositories %}<option value="{{ r.id }}" translate="no">{{ r.name }}</option>{% endfor %}</select>
+        </label>
+        <button class="primary" type="button" data-drive-pick>Import from Google Drive</button>
+        <p class="small-note">PDF, Word, text, Markdown, CSV and Google Docs, Sheets and Slides · up to 10 files at a time · 12 MB each.</p>
+        <div class="drive-result" data-drive-result role="status" aria-live="polite"></div>
+      </div>
+      {% else %}
+      <p class="small-note">Create a knowledge folder first, then come back to import. <a href="{{ url_for('knowledge.index') }}">Open Knowledge</a></p>
+      {% endif %}
+    {% endif %}
+    {% if role in ['owner','admin'] %}
+      <form method="post" action="{{ url_for('knowledge.google_disconnect') }}" class="drive-disconnect"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-danger" type="submit">Disconnect Google Drive</button></form>
+    {% endif %}
+  {% endif %}
+</section>
+
+{% for c in connections if c.provider == 'email' %}
+<section class="panel integration-card">
+  <div class="icon" aria-hidden="true">✉</div>
+  <h2>Business Email</h2>
   <p>Status: <span class="status">{{ c.status|replace('_',' ') }}</span></p>
-  <p class="small-note">{% if c.provider == 'google_drive' %}Planned: user-authorised file discovery and read-only import with limited OAuth scopes.{% else %}Planned: authorised mailbox access with restricted scopes; sending messages will require separate approval controls.{% endif %}</p>
-  {% if g.membership.role in ['owner','admin'] %}
+  <p class="small-note">Planned: read-only mailbox access with restricted permissions; sending messages will require approval first.</p>
+  {% if role in ['owner','admin'] %}
     {% if c.status == 'setup_requested' %}
       <p class="small-note">Setup requested{% if c.updated_at %} on {{ c.updated_at.strftime('%d %b %Y') }}{% endif %}.</p>
     {% else %}
-      <form method="post" action="{{ url_for('knowledge.request_integration_setup', provider=c.provider) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="primary" type="submit">Request setup</button></form>
+      <form method="post" action="{{ url_for('knowledge.request_integration_setup', provider=c.provider) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" type="submit">Request setup</button></form>
     {% endif %}
   {% else %}
-    <p class="small-note">Ask a workspace owner or admin to request setup.</p>
+    <p class="small-note">Ask a workspace Owner or Admin to request setup.</p>
   {% endif %}
 </section>
 {% endfor %}
 </div>
-<div class="footnote">Credentials for future connections are encrypted with a dedicated key before storage, and every setup action is recorded in the workspace audit log.</div>
+<div class="footnote">Google sign-in details are encrypted with a dedicated key before storage. Connecting, importing and disconnecting are recorded in the workspace audit log.</div>
+{% if drive.connected %}<script src="{{ url_for('static', filename='js/drive-picker.js') }}" defer></script>{% endif %}
 {% endblock %}

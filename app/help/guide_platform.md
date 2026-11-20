@@ -46,11 +46,17 @@ A business can only switch AI employees on and assign work while trialing or act
 - Uploaded documents are stored encrypted in the AWS S3 bucket in Stockholm (eu-north-1). The AWS account is on a free plan that ends 19 May 2027 — upgrade before then or storage stops.
 - Keep safe in a password manager (never in chat or GitHub): FILE_ENCRYPTION_KEY and INTEGRATION_ENCRYPTION_KEY (losing them makes stored data unreadable), OPENAI_API_KEY, the AWS access key, admin recovery codes.
 
+## Google Drive integration (owner setup)
+Businesses can import files they pick from Google Drive. It uses Google's narrowest permission (drive.file + the Google Picker), so no Google security audit is needed. It switches on once these four settings are on the website service (ai-workforce-h0dp → Environment): GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_API_KEY (Picker key, restricted to the site and the Google Picker API) and GOOGLE_APP_ID (the Google Cloud project number).
+- Google Cloud project: Google Drive API and Google Picker API enabled; consent screen (External) with scopes drive.file, openid, userinfo.email; Web OAuth client with JavaScript origin https://ai-workforce-h0dp.onrender.com and redirect URI https://ai-workforce-h0dp.onrender.com/knowledge/integrations/google/callback.
+- While the consent screen is in **Testing**, only listed test users can connect. Click **Publish app** to let every business connect; Google may ask to verify the app's name and logo (brand verification), which is free.
+- Tokens are stored encrypted with INTEGRATION_ENCRYPTION_KEY; changing that key disconnects every business.
+
 ## Not set up yet
 - **Email (SMTP)**: add SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM to the website service, so verification and password-reset emails send.
 - **Online payments**: connect Paystack (best for mobile money in Ghana) or Stripe keys and webhooks. Until then, switch businesses on by hand (status **active**).
 - **Inviting staff** to a workspace has no screen yet.
-- **Google Drive / Business Email integrations** are placeholders.
+- **Business Email integration** is a placeholder (Google Drive is built; it needs the Google settings above).
 
 ## Troubleshooting
 | What you see | What to do |

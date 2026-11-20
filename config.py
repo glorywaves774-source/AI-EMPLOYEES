@@ -23,6 +23,11 @@ class Config:
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
     OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
     HELP_MODEL = os.environ.get("HELP_MODEL")  # Kombian help assistant; defaults to OPENAI_MODEL
+    # Google Drive integration (drive.file scope + Google Picker). All four are needed to enable it.
+    GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+    GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+    GOOGLE_APP_ID = os.environ.get("GOOGLE_APP_ID")  # Google Cloud project number
 
     MAX_CONTENT_LENGTH = 12 * 1024 * 1024
     STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local")
