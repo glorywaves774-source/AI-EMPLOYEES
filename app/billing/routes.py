@@ -3,11 +3,15 @@ from datetime import datetime, timedelta, timezone
 import json
 import uuid
 from decimal import Decimal
-from flask import flash, g, redirect, render_template, request, url_for, current_app, abort
+from flask import flash, g, make_response, redirect, render_template, request, url_for, current_app, abort
 from flask_login import current_user, login_required
 from app.extensions import db
 from app.models import SubscriptionPlan, TenantSubscription, SubscriptionChangeRequest, Payment, Invoice, AuditLog
 from app.security import roles_required
+
+CHECKOUT_CSP = ("default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; "
+                "frame-ancestors 'none'; base-uri 'self'; "
+                "form-action 'self' https://checkout.paystack.com https://checkout.stripe.com")
 from . import billing_bp
 from .services import (
     ensure_default_plans, current_subscription, task_usage,
@@ -76,7 +80,11 @@ def index():
     invoices = Invoice.query.filter_by(tenant_id=g.active_tenant_id).order_by(Invoice.issued_at.desc()).limit(20).all()
     usage = task_usage(g.active_tenant_id)
     plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.amount.asc()).all()
-    return render_template("billing/index.html", subscription=sub, plans=plans, payments=payments, invoices=invoices, usage=usage)
+    response = make_response(render_template("billing/index.html", subscription=sub, plans=plans, payments=payments, invoices=invoices, usage=usage))
+    # "Choose plan" posts here, then redirects to the provider's checkout. Browsers apply
+    # form-action to that redirect, so the checkout origins are allowed on this page only.
+    response.headers["Content-Security-Policy"] = CHECKOUT_CSP
+    return response
 
 @billing_bp.post("/subscribe/<int:plan_id>")
 @roles_required("owner", "admin")
