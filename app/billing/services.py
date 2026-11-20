@@ -118,6 +118,20 @@ def process_subscription_expirations():
     return changed
 
 
+def close_abandoned_payments(older_than_hours=2):
+    """Checkouts that were opened but never paid stay 'pending' forever; mark them
+    'abandoned' after a while so billing history is clear. A late webhook can still
+    activate one (activation only skips payments already marked paid)."""
+    from app.models import Payment
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=older_than_hours)
+    stale = Payment.query.filter(Payment.status == "pending", Payment.created_at < cutoff).all()
+    for p in stale:
+        p.status = "abandoned"
+    if stale:
+        db.session.commit()
+    return len(stale)
+
+
 def mark_payment_refunded(payment, amount=None, provider_event=None):
     refund_amount = Decimal(str(amount)) if amount is not None else Decimal(payment.amount)
     payment.refunded_amount = min(Decimal(payment.amount), refund_amount)

@@ -280,3 +280,24 @@ class EmailNoticeTests(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BillingDisplayTests(Base):
+    def test_period_label_and_abandoned_checkouts(self):
+        from app.billing.services import close_abandoned_payments
+        page = self.client.get("/billing/").get_data(as_text=True)
+        self.assertIn("Trial ends", page)
+        sub = TenantSubscription.query.first()
+        sub.status = "active"
+        sub.current_period_end = datetime(2026, 12, 20, tzinfo=timezone.utc)
+        db.session.add(Payment(tenant_id=self.tid, subscription_id=sub.id, provider="paystack", provider_reference="AW-old",
+                               amount=450, currency="GHS", status="pending", invoice_number="INV-X",
+                               created_at=datetime.now(timezone.utc) - timedelta(hours=3)))
+        db.session.add(Payment(tenant_id=self.tid, subscription_id=sub.id, provider="paystack", provider_reference="AW-new",
+                               amount=450, currency="GHS", status="pending", invoice_number="INV-Y"))
+        db.session.commit()
+        self.assertEqual(close_abandoned_payments(), 1)
+        page = self.client.get("/billing/").get_data(as_text=True)
+        self.assertIn("Current period ends", page); self.assertIn("20 Dec 2026", page)
+        self.assertIn("not completed", page)
+        self.assertEqual(Payment.query.filter_by(provider_reference="AW-new").one().status, "pending")
