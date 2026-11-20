@@ -52,7 +52,14 @@ PICKER_CSP = ("default-src 'self'; style-src 'self' 'unsafe-inline' https://font
               "frame-src https://docs.google.com https://drive.google.com https://accounts.google.com https://content.googleapis.com; "
               "connect-src 'self' https://www.googleapis.com https://content.googleapis.com; "
               "img-src 'self' data: https://*.googleusercontent.com https://*.gstatic.com https://*.google.com; "
-              "font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+              "font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; "
+              "form-action 'self' https://accounts.google.com")
+
+# "Connect Google Drive" posts to this app, which redirects to Google's sign-in page.
+# Browsers apply form-action to that redirect, so Google's sign-in origin must be allowed
+# on the Integrations page (and only there).
+CONNECT_CSP = ("default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; "
+               "frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com")
 
 
 @knowledge_bp.post("/integrations/google/connect")

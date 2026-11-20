@@ -113,6 +113,15 @@ class UiShellTests(unittest.TestCase):
         self.assertNotIn('class="tabbar"', html)
         self.assertNotIn("desktop-nav", html)
 
+    def test_billing_page_allows_redirect_to_checkout_only_there(self):
+        self._register()
+        csp = self.client.get("/billing/").headers["Content-Security-Policy"]
+        form_action = csp.split("form-action")[1].split(";")[0]
+        self.assertIn("https://checkout.paystack.com", form_action)
+        self.assertIn("https://checkout.stripe.com", form_action)
+        self.assertIn("script-src 'self';", csp)
+        self.assertNotIn("checkout.paystack.com", self.client.get("/dashboard").headers["Content-Security-Policy"])
+
     def test_login_links_to_password_reset(self):
         self.assertIn('href="/auth/forgot-password"', self._html("/auth/login"))
 

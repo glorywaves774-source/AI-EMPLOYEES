@@ -136,7 +136,12 @@ class DriveTests(unittest.TestCase):
     def test_page_states_and_csp_scope(self):
         page = self.client.get("/knowledge/integrations")
         self.assertIn("Connect Google Drive", page.get_data(as_text=True))
-        self.assertNotIn("apis.google.com", page.headers["Content-Security-Policy"])
+        csp = page.headers["Content-Security-Policy"]
+        self.assertNotIn("apis.google.com", csp)
+        # the Connect form redirects to Google sign-in: browsers check form-action on that redirect
+        form_action = csp.split("form-action")[1].split(";")[0]
+        self.assertIn("https://accounts.google.com", form_action)
+        self.assertNotIn("accounts.google.com", self.client.get("/dashboard").headers["Content-Security-Policy"])
         self.connect()
         page = self.client.get("/knowledge/integrations")
         html = page.get_data(as_text=True)
@@ -145,6 +150,7 @@ class DriveTests(unittest.TestCase):
         self.assertIn("js/drive-picker.js", html)
         self.assertIn("https://apis.google.com", page.headers["Content-Security-Policy"])
         self.assertIn("frame-ancestors 'none'", page.headers["Content-Security-Policy"])
+        self.assertIn("https://accounts.google.com", page.headers["Content-Security-Policy"].split("form-action")[1])
         # every other page keeps the strict policy
         self.assertNotIn("apis.google.com", self.client.get("/dashboard").headers["Content-Security-Policy"])
 

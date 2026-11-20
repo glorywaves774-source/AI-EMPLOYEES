@@ -180,11 +180,12 @@ def integrations():
     connections = [{"provider": p, "status": existing[p].status if p in existing else "not_connected",
                     "updated_at": existing[p].updated_at if p in existing else None}
                    for p in ("google_drive", "email")]
-    from .google_routes import PICKER_CSP, drive_view_state
+    from .google_routes import CONNECT_CSP, PICKER_CSP, drive_view_state
     drive = drive_view_state()
     response = make_response(render_template("knowledge/integrations.html", connections=connections, drive=drive))
-    if drive["configured"] and drive["connected"]:
-        response.headers["Content-Security-Policy"] = PICKER_CSP  # Google Picker, this page only
+    if drive["configured"]:
+        # This page only: allow the redirect to Google sign-in, and the Picker once connected.
+        response.headers["Content-Security-Policy"] = PICKER_CSP if drive["connected"] else CONNECT_CSP
     return response
 
 
