@@ -160,7 +160,7 @@ def dashboard():
 
 _REF_TEXT = {
     "claude-credit": "the Claude (Anthropic) account has run out of credit. Add credit at platform.claude.com → Settings → Billing.",
-    "claude-key": "Anthropic rejected the API key. Check ANTHROPIC_API_KEY in Render (web and worker).",
+    "claude-key": "Anthropic rejected the API key. Check ANTHROPIC_API_KEY in Render (web and worker); use a key created inside a workspace, or set ANTHROPIC_WORKSPACE_ID.",
     "claude-model": "Anthropic does not recognise the configured model. Check CLAUDE_MODEL / TRIAL_CLAUDE_MODEL in Render.",
     "claude-busy": "Claude was overloaded.",
     "openai-credit": "the OpenAI account has run out of credit. Add credit at platform.openai.com → Settings → Billing.",
