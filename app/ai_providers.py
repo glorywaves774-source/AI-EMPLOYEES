@@ -85,7 +85,12 @@ def openai_client():
 
 def claude_client():
     import anthropic
-    return anthropic.Anthropic(api_key=_claude_key(), timeout=120.0, max_retries=2)
+    kwargs = {}
+    workspace = _cfg("ANTHROPIC_WORKSPACE_ID")
+    if workspace:
+        # Needed only for keys that aren't tied to one workspace in the Claude Console.
+        kwargs["default_headers"] = {"anthropic-workspace-id": workspace.strip()}
+    return anthropic.Anthropic(api_key=_claude_key(), timeout=120.0, max_retries=2, **kwargs)
 
 
 # --- classification of provider errors --------------------------------------
@@ -114,6 +119,8 @@ def _classify(provider, exc):
         lowered = detail.lower()
         if "credit balance" in lowered or "billing" in lowered:
             return "claude-credit"
+        if "workspace" in lowered and "scoped" in lowered:
+            return "claude-key"
     if name in _TRANSIENT_CLASSES:
         return f"{provider}-busy"
     return None

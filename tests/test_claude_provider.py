@@ -136,6 +136,18 @@ class ClaudeFirstTests(ProviderTests):
         self.assertEqual(self.claude.messages.create.call_args.kwargs["max_tokens"], 900)
 
 
+class WorkspaceTests(ProviderTests):
+    def test_unscoped_key_error_is_explained_and_workspace_header_supported(self):
+        self.p1.stop()
+        self.claude.messages.create.side_effect = claude_error(
+            "BadRequestError", "This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header")
+        self.assertEqual(ai_providers._classify("claude", self.claude.messages.create.side_effect), "claude-key")
+        self.app.config["ANTHROPIC_WORKSPACE_ID"] = "wrkspc_123"
+        client = ai_providers.claude_client()
+        self.assertEqual(client._custom_headers.get("anthropic-workspace-id"), "wrkspc_123")
+        self.p1.start()
+
+
 class PreferOpenAITests(ProviderTests):
     extra = {"AI_PROVIDER": "openai"}
 
