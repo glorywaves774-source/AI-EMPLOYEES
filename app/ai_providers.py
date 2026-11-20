@@ -157,6 +157,9 @@ def complete(instructions, input_text, *, trial=False, max_tokens=None):
         except Exception as exc:
             ref = _classify(provider, exc)
             if ref is None:
+                # Unexpected refusal: log the provider's own reason (never the key) so it can be fixed.
+                current_app.logger.error("AI provider %s error %s (model %s): %s", provider,
+                                         type(exc).__name__, model, str(exc)[:500])
                 raise
             refs.append(ref)
             current_app.logger.error("AI provider %s refused (%s): %s", provider, ref, str(exc)[:300])
