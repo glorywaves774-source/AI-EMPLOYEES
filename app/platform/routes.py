@@ -158,25 +158,45 @@ def dashboard():
                            platform_name=current_app.config.get("PLATFORM_NAME", "Kayron Global Tech Services"))
 
 
+_REF_TEXT = {
+    "claude-credit": "the Claude (Anthropic) account has run out of credit. Add credit at platform.claude.com → Settings → Billing.",
+    "claude-key": "Anthropic rejected the API key. Check ANTHROPIC_API_KEY in Render (web and worker).",
+    "claude-model": "Anthropic does not recognise the configured model. Check CLAUDE_MODEL / TRIAL_CLAUDE_MODEL in Render.",
+    "claude-busy": "Claude was overloaded.",
+    "openai-credit": "the OpenAI account has run out of credit. Add credit at platform.openai.com → Settings → Billing.",
+    "openai-key": "OpenAI rejected the API key. Check OPENAI_API_KEY in Render (web and worker).",
+    "openai-model": "OpenAI does not recognise the configured model. Check OPENAI_MODEL / TRIAL_OPENAI_MODEL in Render.",
+    "openai-busy": "OpenAI was overloaded.",
+    "no-provider": "no AI provider is set up. Add ANTHROPIC_API_KEY or OPENAI_API_KEY in Render.",
+}
+
+
 def _recent_ai_outage():
-    """Most recent platform-side AI refusal (e.g. OpenAI credit exhausted) in the last 24 hours."""
+    """Platform-side AI refusals in the last 24 hours, explained per provider."""
+    import re
     from datetime import datetime, timedelta, timezone
-    from app.models import AgentRun
+    from app.models import AgentRun, WorkforceTask
     since = datetime.now(timezone.utc) - timedelta(hours=24)
-    faults = ("insufficient_quota", "credit_balance_exhausted", "invalid_api_key", "model_not_found")
-    run = (AgentRun.query.filter(AgentRun.status == "failed", AgentRun.created_at >= since,
-                                 db.or_(*[AgentRun.error_message.like(f"%{f}%") for f in faults]))
-           .order_by(AgentRun.created_at.desc()).first())
-    if not run:
+    patterns = ["%(ref: %", "%insufficient_quota%", "%credit_balance_exhausted%"]
+    hits = []
+    for model in (AgentRun, WorkforceTask):
+        rows = (model.query.filter(model.created_at >= since, model.status == "failed",
+                                   db.or_(*[model.error_message.like(p) for p in patterns]))
+                .order_by(model.created_at.desc()).limit(20).all())
+        hits += [(r.created_at, r.error_message or "") for r in rows]
+    if not hits:
         return None
-    msg = run.error_message or ""
-    if "invalid_api_key" in msg:
-        reason = "OpenAI rejected the API key. Check OPENAI_API_KEY in Render."
-    elif "model_not_found" in msg:
-        reason = "OpenAI does not recognise the configured model. Check OPENAI_MODEL / TRIAL_OPENAI_MODEL in Render."
-    else:
-        reason = "The OpenAI account has run out of credit. Add credit at platform.openai.com → Settings → Billing."
-    return {"reason": reason, "at": run.created_at}
+    hits.sort(key=lambda h: h[0], reverse=True)
+    refs = []
+    for _, msg in hits:
+        found = re.findall(r"(claude|openai)-(credit|key|model|busy)|no-provider", msg)
+        found = ["-".join(f) if isinstance(f, tuple) and f[0] else "no-provider" for f in found]
+        if not found and ("insufficient_quota" in msg or "credit_balance_exhausted" in msg):
+            found = ["openai-credit"]
+        refs += [f for f in found if f not in refs]
+    serious = [r for r in refs if not r.endswith("-busy")] or refs
+    reason = " Also, ".join(_REF_TEXT[r][0].upper() + _REF_TEXT[r][1:] for r in serious if r in _REF_TEXT)
+    return {"reason": reason, "at": hits[0][0]}
 
 
 @platform_bp.post("/plans/<int:plan_id>")

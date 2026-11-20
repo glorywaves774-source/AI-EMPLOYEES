@@ -147,14 +147,8 @@ def _history_text(history):
 
 
 def _call_ai(instructions, input_text):
-    from app.ai_engine import _client  # reuse the configured OpenAI client
-    client = _client()
-    model = current_app.config.get("HELP_MODEL") or current_app.config.get("OPENAI_MODEL", "gpt-5.5")
-    response = client.responses.create(model=model, instructions=instructions, input=input_text,
-                                       max_output_tokens=900, store=False)
-    text = (getattr(response, "output_text", "") or "").strip()
-    if not text:
-        raise RuntimeError("empty response")
+    from app.ai_providers import complete
+    text, _model, _in, _out = complete(instructions, input_text, max_tokens=900)
     return text
 
 
@@ -181,7 +175,8 @@ def answer(question, role, history=None):
     input_text = (f"Earlier in this chat:\n{convo}\n\n" if convo else "") + f"Question: {clean}"
     source = "ai"
     try:
-        if not current_app.config.get("OPENAI_API_KEY"):
+        from app.ai_providers import any_provider_configured
+        if not any_provider_configured():
             raise RuntimeError("AI not configured")
         text = _call_ai(_instructions(role, audience), input_text)
     except Exception as exc:  # fall back to the guide itself

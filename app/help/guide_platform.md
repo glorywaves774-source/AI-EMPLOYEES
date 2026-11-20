@@ -22,7 +22,14 @@ Page references are written like [[page:admin]]. The platform owner manages ever
 - Prices are in GHS per month. Current: Starter GHS 450, Growth GHS 2,200, Business GHS 8,500.
 - Limits are fixed in the code and reset if edited: Starter 3 AI employees / 100 tasks, Growth 10 / 500, Business 30 / 2,000. Only price edits last.
 - Plans appear only after the first business signs up. Initial prices come from the Render settings PLAN_STARTER_AMOUNT, PLAN_GROWTH_AMOUNT, PLAN_BUSINESS_AMOUNT; after that, change them on the admin page.
-- Prices were set to cover the AI cost even at full use: the app uses OpenAI GPT-5.5; a typical team job costs about USD 0.16 and at most about USD 0.36. Switching the Render setting OPENAI_MODEL to a cheaper model roughly halves AI cost.
+- Prices were set to cover the AI cost even at full use. A typical team job costs about USD 0.15 on Claude Sonnet 5.5 and well under USD 0.01 on Claude Haiku 5.5 (used for free trials).
+
+## AI providers: Claude and OpenAI
+- The app can use **Claude** (Anthropic) and **OpenAI**. Add ANTHROPIC_API_KEY and/or OPENAI_API_KEY in Render on **both** the website (ai-workforce-h0dp) and the worker (ai-workforce-worker-h0dp).
+- With both keys, Claude is used first and OpenAI takes over automatically if Claude refuses (no credit, wrong key) or is overloaded, and the other way round. AI_PROVIDER=openai puts OpenAI first.
+- Models: paying businesses use CLAUDE_MODEL (default claude-sonnet-5-5); free trials use TRIAL_CLAUDE_MODEL (default claude-haiku-5-5). OpenAI uses OPENAI_MODEL / TRIAL_OPENAI_MODEL.
+- Claude credit: platform.claude.com → Settings → Billing. OpenAI credit: platform.openai.com → Settings → Billing. Turn on auto-reload on both.
+- Kombian uses the same providers.
 
 ## Subscription statuses
 - **trialing** — free 14-day trial from sign-up
@@ -32,7 +39,7 @@ Page references are written like [[page:admin]]. The platform owner manages ever
 - All trial businesses together share a daily AI ceiling of 2,000,000 tokens (TRIAL_DAILY_TOKEN_POOL; 0 turns it off). When reached, new trial assignments wait until midnight GMT; paying businesses are never affected. This protects the OpenAI balance from being drained by trials.
 - TRIAL_OPENAI_MODEL (optional) runs trial work on a cheaper OpenAI model; paid businesses use OPENAI_MODEL.
 - Each assignment may use up to 60,000 tokens (TEAM_EXECUTION_TOKEN_BUDGET) and up to 5 specialists (TEAM_MAX_STEPS).
-- If OpenAI refuses work for a platform reason (no credit, wrong key, unknown model), a yellow warning appears at the top of this admin page. Businesses see "The AI service is temporarily unavailable" and those failed jobs are not counted against their allowance. Top up at platform.openai.com → Settings → Billing; turning on auto-recharge there prevents it happening again.
+- If every AI provider refuses work for a platform reason (no credit, wrong key, unknown model), a yellow warning naming the provider and the fix appears at the top of this admin page. Businesses see "The AI service is temporarily unavailable" and those failed jobs are not counted against their allowance. Top up at platform.openai.com → Settings → Billing; turning on auto-recharge there prevents it happening again.
 - **active** — paid and running (also use this to give a business free access)
 - **past_due** — a payment failed
 - **canceled** — stopped (use this to stop a business that hasn't paid)

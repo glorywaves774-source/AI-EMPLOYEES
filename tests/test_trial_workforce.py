@@ -135,7 +135,7 @@ class ProviderErrorTests(Base):
         client = mock.Mock()
         client.responses.create.side_effect = Exception(
             "Error code: 429 - {'error': {'code': 'credit_balance_exhausted', 'type': 'insufficient_quota'}}")
-        with mock.patch("app.ai_engine._client", return_value=client):
+        with mock.patch("app.ai_providers.openai_client", return_value=client):
             with self.assertRaises(AIServiceUnavailable) as cm:
                 _call_model("i", "x", tenant_id=self.tid)
         self.assertTrue(str(cm.exception).startswith(AI_SERVICE_UNAVAILABLE))
@@ -144,7 +144,7 @@ class ProviderErrorTests(Base):
     def test_other_errors_still_raise_normally(self):
         from app.ai_engine import AIServiceUnavailable, _call_model
         client = mock.Mock(); client.responses.create.side_effect = TimeoutError("slow")
-        with mock.patch("app.ai_engine._client", return_value=client):
+        with mock.patch("app.ai_providers.openai_client", return_value=client):
             with self.assertRaises(TimeoutError):
                 _call_model("i", "x")
 
