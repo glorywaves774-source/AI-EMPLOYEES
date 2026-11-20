@@ -119,6 +119,30 @@ class AIEmployee(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
     department = db.relationship("Department", back_populates="employees")
 
+class GeneratedAsset(db.Model):
+    """A chart, presentation or graphic made from a finished assignment. Stored encrypted; draft until reviewed."""
+    __tablename__ = "generated_assets"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_id = db.Column(db.Integer, db.ForeignKey("workforce_tasks.id", ondelete="CASCADE"), nullable=False, index=True)
+    kind = db.Column(db.String(20), nullable=False)          # chart | presentation | graphic
+    style = db.Column(db.String(20), nullable=False, default="")  # graphic: design | photo
+    brief = db.Column(db.String(1000), nullable=False, default="")
+    title = db.Column(db.String(200), nullable=False, default="")
+    status = db.Column(db.String(20), nullable=False, default="queued", index=True)  # queued|running|ready|failed
+    error_message = db.Column(db.String(500), nullable=False, default="")
+    storage_key = db.Column(db.String(64))
+    mime_type = db.Column(db.String(120), nullable=False, default="")
+    filename = db.Column(db.String(200), nullable=False, default="")
+    size_bytes = db.Column(db.Integer, nullable=False, default=0)
+    review_status = db.Column(db.String(20), nullable=False, default="pending")  # pending|approved|rejected
+    reviewed_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at = db.Column(db.DateTime(timezone=True))
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False, index=True)
+    completed_at = db.Column(db.DateTime(timezone=True))
+
+
 class WorkforceTask(db.Model):
     __tablename__ = "workforce_tasks"
     __table_args__ = (

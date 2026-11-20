@@ -111,6 +111,11 @@ def register_tasks(celery):
         from app.workforce.team_execution import dispatch_ready_wave
         return dispatch_ready_wave(celery, tenant_id, execution_id)
 
+    @celery.task(name="visuals.generate_asset", soft_time_limit=240, time_limit=300)
+    def generate_visual(tenant_id, asset_id):
+        from app.workforce.visuals import generate_asset
+        return generate_asset(tenant_id, asset_id)
+
     @celery.task(name="billing.process_subscription_expirations")
     def billing_expiry_task():
         return {"expired": process_subscription_expirations()}

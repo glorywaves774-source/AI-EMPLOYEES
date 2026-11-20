@@ -55,6 +55,11 @@ class Config:
     TRIAL_MAX_AI_EMPLOYEES = int(os.environ.get("TRIAL_MAX_AI_EMPLOYEES", "10"))
     TRIAL_DAILY_TASK_LIMIT = int(os.environ.get("TRIAL_DAILY_TASK_LIMIT", "5"))
     # Shared ceiling for all trial workspaces together per UTC day (0 = no ceiling).
+    # Charts, presentations and graphics made from finished assignments (per workspace per UTC day).
+    TRIAL_DAILY_VISUAL_LIMIT = int(os.environ.get("TRIAL_DAILY_VISUAL_LIMIT", "5"))
+    VISUALS_DAILY_LIMIT = int(os.environ.get("VISUALS_DAILY_LIMIT", "40"))
+    OPENAI_IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-2.5-flare")
+    OPENAI_IMAGE_SIZE = os.environ.get("OPENAI_IMAGE_SIZE", "1024x1024")
     TRIAL_DAILY_TOKEN_POOL = int(os.environ.get("TRIAL_DAILY_TOKEN_POOL", "2000000"))
     TEAM_EXECUTION_MAX_PARALLELISM = int(os.environ.get("TEAM_EXECUTION_MAX_PARALLELISM", "3"))
     TEAM_EXECUTION_COST_BUDGET_USD = os.environ.get("TEAM_EXECUTION_COST_BUDGET_USD") or None

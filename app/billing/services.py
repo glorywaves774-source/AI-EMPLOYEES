@@ -235,6 +235,32 @@ def can_create_task(tenant_id):
                            "or choose a plan to keep going today.")
     return True, ""
 
+def visuals_today(tenant_id):
+    from app.models import GeneratedAsset
+    return GeneratedAsset.query.filter(GeneratedAsset.tenant_id == tenant_id,
+                                       GeneratedAsset.created_at >= _utc_midnight(),
+                                       GeneratedAsset.status != "failed").count()
+
+
+def can_create_visual(tenant_id):
+    sub = current_subscription(tenant_id)
+    if not sub or sub.status not in {"trialing", "active"}:
+        return False, "Your subscription is not active. Choose a plan to continue."
+    if is_trial(sub):
+        limit = int(_cfg("TRIAL_DAILY_VISUAL_LIMIT", 5))
+        if limit and visuals_today(tenant_id) >= limit:
+            return False, (f"Your free trial includes {limit} charts, presentations or graphics a day. "
+                           "This renews at midnight (GMT), or choose a plan to keep going today.")
+        pool = int(_cfg("TRIAL_DAILY_TOKEN_POOL", 0))
+        if pool and trial_tokens_today() >= pool:
+            return False, "Free-trial capacity for today is fully booked. It renews at midnight (GMT)."
+    else:
+        limit = int(_cfg("VISUALS_DAILY_LIMIT", 40))
+        if limit and visuals_today(tenant_id) >= limit:
+            return False, f"You have made {limit} charts, presentations or graphics today. This renews at midnight (GMT)."
+    return True, ""
+
+
 def can_activate_employee(tenant_id):
     sub = current_subscription(tenant_id)
     if not sub or sub.status not in {"trialing", "active"}:

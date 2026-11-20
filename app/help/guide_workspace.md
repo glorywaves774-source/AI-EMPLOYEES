@@ -71,6 +71,16 @@ On a job's page: the brief, the Coordinator's plan, each specialist's contributi
 
 Every job counts towards the task allowance: **Starter 100**, **Growth 500**, **Business 2,000** per billing period. During the free trial there is also a daily allowance of **5 assignments a day**, renewed at midnight (GMT), so the trial lasts the full 14 days; the dashboard shows how many are left today. Jobs that fail because the AI service itself was unavailable are **not** counted. A job stuck on Queued usually means the background worker is down — tell the platform owner.
 
+## Charts, presentations and graphics
+When an assignment is **Completed**, open it and scroll to **Turn this into visuals** (Owners, Admins, Managers):
+- **Charts**: bar, line or pie charts of the figures in the response, as PNG images. If the response has no figures, you'll be told so.
+- **Presentation**: a PowerPoint (.pptx) deck with speaker notes and charts, in your business name. Opens in PowerPoint, Google Slides or Keynote.
+- **Graphic**: a flyer, social media post, banner or infographic. **Design** style gives an editable SVG (opens in a browser, Canva, Illustrator or Inkscape). **Photo-style image** gives a PNG and only works when the platform owner has set up OpenAI.
+- Optionally say what you want (e.g. "8 slides for our board", "Instagram post announcing our launch"), then tap the button. Files take about a minute; refresh the page to see them.
+- Every file starts as a **Draft**. Owners and Admins can **Approve** or **Reject** it; this only records a decision, nothing is posted or sent.
+- Free trial: 5 visuals a day. Paid plans: up to 40 a day.
+- Charts only use figures from the response; estimates are labelled "Estimated". Always check numbers before sharing.
+
 ## Approvals
 [[page:approvals]] is the record of who signed off on what. Approving only records a decision; nothing is carried out automatically.
 - **Request approval**: enter an **Action type** (e.g. "Supplier payment over GHS 10,000") and a **Description**, then **Submit for approval**. Owners, Admins and Managers can submit.
@@ -143,6 +153,8 @@ On [[page:billing]]: current plan, limits, tasks used this period and when the t
 | Job stuck on Queued | The background worker may be down; tell the platform owner |
 | Job Failed | Open it, read the message, tap **Retry eligible failed steps** |
 | "The AI service is temporarily unavailable" | A problem on the platform side (Kayron is alerted). It is not counted against your allowance; try again later |
+| "Charts … can be made once the assignment is completed" | Wait for the assignment to finish, then try again |
+| "This assignment has no figures that can be charted" | Try a presentation or graphic instead, or ask for an assignment with numbers |
 | "Your free trial includes 5 assignments a day" | The daily trial allowance is used up; it renews at midnight (GMT), or choose a plan |
 | "Free-trial capacity for today is fully booked" | Trial capacity is shared and renews at midnight (GMT), or choose a plan |
 | "Invalid credentials or account temporarily locked" | Check you're on the business sign-in page and the password; wait 15 minutes after 5 failures |
