@@ -85,3 +85,17 @@ Businesses can import files they pick from Google Drive. It uses Google's narrow
 
 ## Privacy
 Kombian only sees the question and this guide, never business records. Phone numbers, emails and long ID numbers are removed before questions reach the AI service.
+
+
+## Payments (Paystack, Mobile Money)
+- Add PAYSTACK_SECRET_KEY in Render (website ai-workforce-h0dp). Businesses then see "Pay with Mobile Money or card (Paystack)" on Billing.
+- In the Paystack dashboard set the webhook URL to https://ai-workforce-h0dp.onrender.com/billing/webhooks/paystack. Plans also switch on when the customer returns from Paystack (the app checks the payment with Paystack and that the amount matches).
+
+## Email
+- Set SMTP_HOST, SMTP_PORT (587, or 465 with SMTP_USE_SSL=true), SMTP_USERNAME, SMTP_PASSWORD and SMTP_FROM on the website and the worker. Used for sign-up verification, password resets, team invitations and "assignment ready" emails.
+
+## Hourly job
+- ai-workforce-expiry-job-h0dp runs every hour: it expires ended trials/plans and starts repeating assignments that are due. It needs REDIS_URL to reach the job queue.
+
+## Legal pages
+- /privacy and /terms are public and linked from sign-up and every page footer. Contact details come from LEGAL_PHONE, LEGAL_WHATSAPP, LEGAL_ADDRESS and LEGAL_EMAIL (optional). New businesses must tick that they agree; the version is recorded.

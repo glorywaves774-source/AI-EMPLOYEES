@@ -38,7 +38,7 @@ class Base(unittest.TestCase):
         with self.app.app_context():
             db.create_all()
         r = self.client.post("/auth/register", data={"full_name": "Owner", "email": "o@example.com",
-            "business_name": "Example Ltd", "password": "a-very-strong-password-123"})
+            "business_name": "Example Ltd", "password": "a-very-strong-password-123", "accept_terms": "yes"})
         self.assertIn(r.status_code, (302, 303))
         with self.app.app_context():
             self.tid = TenantSubscription.query.first().tenant_id

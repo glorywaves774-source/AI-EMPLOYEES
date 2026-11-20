@@ -1,0 +1,5 @@
+<ul class="legal-contact">
+<li><strong>{{ c.company }}</strong>, {{ c.address }}</li>
+<li>Phone: <a href="tel:+233{{ c.phone[1:] }}">{{ c.phone }}</a> · WhatsApp: <a href="https://wa.me/233{{ c.whatsapp[1:] }}" rel="noopener">{{ c.whatsapp }}</a></li>
+{% if c.email %}<li>Email: <a href="mailto:{{ c.email }}">{{ c.email }}</a></li>{% endif %}
+</ul>

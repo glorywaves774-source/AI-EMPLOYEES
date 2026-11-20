@@ -17,15 +17,15 @@
 {% endif %}
 <section class="billing-plan-grid">
 {% for plan in plans %}
-<article class="billing-plan {% if subscription and subscription.plan_id == plan.id %}current{% endif %}">
+{% set is_current = subscription and subscription.plan_id == plan.id and subscription.status == 'active' %}<article class="billing-plan {% if is_current %}current{% endif %}">
 <p class="eyebrow">{{ plan.name|upper }}</p><h2>{{ plan.name }}</h2><p class="muted">{{ plan.description }}</p>
 <div class="price">{% if plan.amount|float > 0 %}{{ plan.currency }} {{ "%.2f"|format(plan.amount|float) }}<small>/month</small>{% else %}<span>Configurable</span><small>via platform admin</small>{% endif %}</div>
 <ul><li>Up to {{ plan.max_ai_employees }} active AI employees</li><li>{{ "{:,}".format(plan.monthly_task_limit) }} tasks per billing period</li><li>{{ plan.trial_days }}-day initial trial</li></ul>
-{% if subscription and subscription.plan_id == plan.id %}<span class="current-badge">Current plan</span>{% else %}
+{% if is_current %}<span class="current-badge">Current plan</span>{% elif not providers %}<p class="muted">Online payment is being set up. To subscribe now, contact Kayron.</p>{% else %}
 <form method="post" action="{{ url_for('billing.subscribe', plan_id=plan.id) }}">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<label>Payment provider<select name="provider"><option value="paystack">Paystack</option><option value="stripe">Stripe</option></select></label>
-<button class="primary" type="submit">Choose plan</button>
+{% if providers|length == 1 %}<input type="hidden" name="provider" value="{{ providers[0][0] }}"><p class="muted pay-with">Pay with {{ providers[0][1] }}</p>{% else %}<label>Pay with<select name="provider">{% for code, label in providers %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select></label>{% endif %}
+<button class="primary" type="submit">{{ 'Subscribe' if subscription and subscription.status == 'trialing' else 'Choose plan' }}</button>
 </form>{% endif %}
 </article>
 {% endfor %}

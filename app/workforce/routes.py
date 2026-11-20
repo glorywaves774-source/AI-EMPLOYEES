@@ -5,6 +5,7 @@ from app.models import WorkforceTask, AgentRun, AuditLog, TeamExecution, TeamExe
 from app.security import roles_required, active_membership_required
 from app.models import AIEmployee
 from app.billing.services import can_create_task, can_create_visual
+from app.workforce.exports import tables_in
 from flask import current_app
 from . import workforce_bp
 
@@ -15,6 +16,10 @@ def execute():
     instructions = request.form.get("instructions", "").strip()
     if not title or not instructions or len(instructions) > 8000:
         flash("Provide a title and assignment details (maximum 8,000 characters).", "error")
+        return redirect(url_for("workspace.dashboard"))
+    import re as _re
+    if _re.search(r"\[[A-Za-z][^\]\n]{0,80}\](?!\()", title + "\n" + instructions):
+        flash("Replace the parts in [square brackets] with your own details before sending.", "error")
         return redirect(url_for("workspace.dashboard"))
     allowed, message = can_create_task(g.active_tenant_id)
     if not allowed:
@@ -39,6 +44,27 @@ def execute():
         db.session.commit()
         flash("The task queue is unavailable. Check Redis and the worker service.", "error")
         return redirect(url_for("workspace.dashboard"))
+    repeat = request.form.get("repeat", "none")
+    if repeat in {"daily", "weekly", "monthly"}:
+        from datetime import datetime, timezone
+        from app.models import RecurringAssignment
+        from app.workforce.recurring import MAX_PER_WORKSPACE, describe, next_run
+        if RecurringAssignment.query.filter_by(tenant_id=g.active_tenant_id).count() >= MAX_PER_WORKSPACE:
+            flash(f"Assignment queued, but it wasn't set to repeat: you already have {MAX_PER_WORKSPACE} repeating assignments.", "info")
+            return redirect(url_for("workforce.task_detail", task_id=task.id))
+        now = datetime.now(timezone.utc)
+        hour = request.form.get("repeat_hour", type=int)
+        r = RecurringAssignment(tenant_id=g.active_tenant_id, created_by_user_id=current_user.id, title=title[:180],
+                                instructions=instructions, frequency=repeat, weekday=now.weekday(),
+                                day_of_month=min(now.day, 28), hour=hour if hour is not None and 0 <= hour <= 23 else 8,
+                                next_run_at=now)
+        r.next_run_at = next_run(r, now)
+        db.session.add(r)
+        db.session.add(AuditLog(tenant_id=g.active_tenant_id, actor_user_id=current_user.id, action="recurring_assignment.created",
+                                target_type="recurring_assignment", target_id=title[:80]))
+        db.session.commit()
+        flash(f"Assignment queued. It will repeat: {describe(r).lower()} (Ghana time).", "success")
+        return redirect(url_for("workforce.task_detail", task_id=task.id))
     flash("Assignment queued. You can monitor its progress in work history.", "success")
     return redirect(url_for("workforce.task_detail", task_id=task.id))
 
@@ -55,6 +81,7 @@ def task_detail(task_id):
     photo_available = bool(current_app.config.get("OPENAI_API_KEY"))
     return render_template("workforce/task_detail.html", task=task, runs=runs, execution=execution, steps=steps,
                            assets=assets, photo_available=photo_available,
+                           has_tables=bool(task.final_output and tables_in(task.final_output)),
                            assets_pending=any(a.status in ("queued", "running") for a in assets))
 
 
@@ -256,3 +283,65 @@ def review_visual(asset_id):
     db.session.commit()
     flash(f"{asset.title} {decision}. This records a decision only; nothing is published.", "success")
     return redirect(url_for("workforce.task_detail", task_id=asset.task_id) + "#visuals")
+
+
+# ---------------------------------------------------------------- Word / Excel downloads
+@workforce_bp.get("/tasks/<int:task_id>/download/<fmt>")
+@login_required
+@active_membership_required
+def download_task(task_id, fmt):
+    import re as _re
+    from flask import Response
+    from app.models import Tenant
+    from app.workforce.exports import tables_in, to_docx, to_xlsx
+    task = WorkforceTask.query.filter_by(id=task_id, tenant_id=g.active_tenant_id).first_or_404()
+    if task.status != "completed" or not task.final_output or fmt not in {"docx", "xlsx"}:
+        abort(404)
+    business = db.session.get(Tenant, g.active_tenant_id).name
+    name = (_re.sub(r"[^\w]+", "-", task.title.lower()).strip("-")[:60] or "assignment")
+    if fmt == "docx":
+        data, mime = to_docx(task, business), "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else:
+        if not tables_in(task.final_output):
+            abort(404)
+        data, mime = to_xlsx(task, business), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    db.session.add(AuditLog(tenant_id=g.active_tenant_id, actor_user_id=current_user.id, action=f"workforce_task.downloaded_{fmt}",
+                            target_type="workforce_task", target_id=str(task.id)))
+    db.session.commit()
+    response = Response(data, mimetype=mime)
+    response.headers["Content-Disposition"] = f'attachment; filename="{name}.{fmt}"'
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+# ---------------------------------------------------------------- recurring assignments
+@workforce_bp.get("/recurring")
+@login_required
+@active_membership_required
+def recurring_list():
+    from app.models import RecurringAssignment
+    from app.workforce.recurring import describe
+    items = RecurringAssignment.query.filter_by(tenant_id=g.active_tenant_id).order_by(RecurringAssignment.created_at.desc()).all()
+    return render_template("workforce/recurring.html", items=items, describe=describe)
+
+
+@workforce_bp.post("/recurring/<int:item_id>/<action>")
+@roles_required("owner", "admin", "manager")
+def recurring_action(item_id, action):
+    from datetime import datetime, timezone
+    from app.models import RecurringAssignment
+    from app.workforce.recurring import next_run
+    r = RecurringAssignment.query.filter_by(id=item_id, tenant_id=g.active_tenant_id).first_or_404()
+    if action == "pause":
+        r.active = False; message = "Paused. It won't run until you resume it."
+    elif action == "resume":
+        r.active = True; r.next_run_at = next_run(r, datetime.now(timezone.utc)); message = "Resumed."
+    elif action == "delete":
+        db.session.delete(r); message = "Repeating assignment deleted. Past results are kept."
+    else:
+        abort(400)
+    db.session.add(AuditLog(tenant_id=g.active_tenant_id, actor_user_id=current_user.id, action=f"recurring_assignment.{action}",
+                            target_type="recurring_assignment", target_id=str(item_id)))
+    db.session.commit()
+    flash(message, "success")
+    return redirect(url_for("workforce.recurring_list"))

@@ -39,7 +39,7 @@ class UiShellTests(unittest.TestCase):
     def _register(self):
         r = self.client.post("/auth/register", data={
             "full_name": "Owner Person", "email": "owner@example.com",
-            "business_name": "Example Ltd", "password": "a-very-strong-password-123",
+            "business_name": "Example Ltd", "password": "a-very-strong-password-123", "accept_terms": "yes",
         })
         self.assertIn(r.status_code, (302, 303))
 

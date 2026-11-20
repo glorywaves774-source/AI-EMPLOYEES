@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Terms of use · AI Workforce{% endblock %}
+{% block content %}
+<article class="panel legal-page">
+<p class="eyebrow">AI WORKFORCE · {{ c.company|upper }}</p>
+<h1>Terms of use</h1>
+<p class="muted">Last updated {{ c.updated }}</p>
+
+<p>These terms are an agreement between {{ c.company }} ("Kayron", "we") and the business or organisation that creates an AI Workforce workspace ("you"). By creating a workspace or using AI Workforce, you accept them on behalf of your business. Please also read our <a href="{{ url_for('legal.privacy') }}">privacy policy</a>.</p>
+
+<h2>1. The service</h2>
+<p>AI Workforce gives your business a team of AI employees that draft plans, documents, analysis, charts, presentations and graphics from the assignments you give them and the documents you choose to share. AI employees cannot send messages, make payments, sign agreements or publish anything by themselves.</p>
+
+<h2>2. Free trial</h2>
+<p>New workspaces get a 14-day free trial with daily limits on assignments and visuals. No payment details are needed for the trial. When it ends, choose a plan to keep using the service; your content stays available for 30 days in case you subscribe later.</p>
+
+<h2>3. Plans and payment</h2>
+<ul>
+<li>Plans are charged monthly in Ghana cedis (GHS), in advance, at the price shown on the Billing page. You can pay with Mobile Money or card through Paystack.</li>
+<li>Each plan has limits on active AI employees and assignments per billing period, shown on the Billing page.</li>
+<li>You can cancel at any time; access continues until the end of the period you paid for. Payments already made are not refunded, except where the law requires or we agree otherwise in writing.</li>
+<li>We may change prices with at least 30 days' notice; the new price applies from your next billing period.</li>
+</ul>
+
+<h2>4. Your account</h2>
+<p>Keep passwords and sign-in codes private and make sure everyone you invite follows these terms. You are responsible for what happens in your workspace. Tell us straight away if you think someone has accessed it without permission.</p>
+
+<h2>5. Your content</h2>
+<p>You keep ownership of everything you put into AI Workforce and of the results it produces for you. You give Kayron permission to store and process that content only to provide and secure the service. You confirm you have the right to share any documents you upload, including any personal information about your customers or staff, and that your business has a lawful basis under Act 843 for doing so.</p>
+
+<h2>6. Checking AI results</h2>
+<p><strong>AI can be wrong.</strong> Results may contain mistakes, outdated information or figures based on assumptions. A suitable person in your business must review every result before relying on it, and especially before any financial, legal, employment, tax, medical or public-facing use. AI Workforce is not a substitute for professional advice.</p>
+
+<h2>7. Acceptable use</h2>
+<p>Do not use AI Workforce to break the law, infringe others' rights, deceive or harass anyone, create harmful or misleading content, process data you are not allowed to, or attempt to access other workspaces or interfere with the service. We may suspend a workspace that does, and will tell you why unless the law prevents it.</p>
+
+<h2>8. Third-party services</h2>
+<p>Some features rely on other providers, such as Anthropic, OpenAI, Google Drive and Paystack. Their availability is outside our control, and their own terms also apply to your use of them.</p>
+
+<h2>9. Availability and changes</h2>
+<p>We work to keep AI Workforce available and secure but cannot promise it will never be interrupted. We may improve or change features; if a change significantly reduces what your paid plan includes, we will tell you in advance.</p>
+
+<h2>10. Liability</h2>
+<p>To the extent the law allows, Kayron is not liable for indirect or consequential losses, or for decisions made on the basis of AI results that were not reviewed. Our total liability for any claim is limited to the fees you paid in the three months before the claim arose. Nothing in these terms limits liability that cannot be limited by law.</p>
+
+<h2>11. Ending the agreement</h2>
+<p>You can stop using AI Workforce and ask us to close your workspace at any time. We may end these terms if you seriously break them. Before closing, workspace owners can download their data from the app.</p>
+
+<h2>12. Law</h2>
+<p>These terms are governed by the laws of the Republic of Ghana, and the courts of Ghana have jurisdiction.</p>
+
+<h2>13. Contact</h2>
+{% include "legal/_contact.html" %}
+</article>
+{% endblock %}

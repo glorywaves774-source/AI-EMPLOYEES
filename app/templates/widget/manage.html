@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Website chat · AI Workforce{% endblock %}
+{% block content %}
+<p class="eyebrow">CUSTOMER CHATBOT</p><h1>Website chat</h1>
+<p class="muted">Put a chat button on your own website. It answers customers' questions from the documents you allow, 24 hours a day, and never takes payments or makes promises.</p>
+<div class="chat-status panel"><span class="state state-{{ 'active' if w.enabled else 'paused' }}">{{ 'on' if w.enabled else 'off' }}</span>
+<p>{% if w.enabled %}Your chatbot is answering customers on the websites listed below.{% else %}Your chatbot is off. Set it up, try it with <strong>Preview</strong>, then turn it on.{% endif %}</p>
+<a class="secondary-button link-button" href="{{ url_for('widget.preview') }}">Preview</a></div>
+{% if not has_knowledge %}<p class="notice">The chatbot can only answer from documents its AI employee may use. Open <a href="{{ url_for('knowledge.index') }}">Knowledge</a>, choose a folder with your prices, opening hours and FAQs, and give <strong>{{ (employees|selectattr('id', 'equalto', w.employee_id)|first).name if w.employee_id else 'your Customer Service Officer' }}</strong> access.</p>{% endif %}
+<form class="panel compact-form chat-settings" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<h2>Settings</h2>
+<div class="settings-grid">
+<label>Chatbot name<input name="bot_name" maxlength="60" value="{{ w.bot_name }}" required></label>
+<label>Button colour<input type="color" name="brand_color" value="{{ w.brand_color }}"></label>
+</div>
+<label>Greeting<input name="greeting" maxlength="300" value="{{ w.greeting }}"></label>
+<label>When it doesn't know the answer, tell customers to… <small class="muted">(e.g. "Call or WhatsApp 0539926867")</small><input name="contact_note" maxlength="300" value="{{ w.contact_note }}" placeholder="Call or WhatsApp us on 0XX XXX XXXX"></label>
+<label>Answers come from the documents this AI employee may use<select name="employee_id">{% for e in employees %}<option value="{{ e.id }}"{% if e.id == w.employee_id %} selected{% endif %}>{{ e.name }} ({{ e.job_title }})</option>{% endfor %}</select></label>
+<label>Your website address(es) <small class="muted">(one per line, e.g. https://www.mybusiness.com)</small><textarea name="allowed_origins" rows="3" placeholder="https://www.mybusiness.com">{{ w.allowed_origins }}</textarea></label>
+<div class="decision-actions"><button class="primary" name="action" value="save">Save settings</button>
+{% if w.enabled %}<button class="secondary-button" name="action" value="disable">Turn off</button>{% else %}<button class="secondary-button" name="action" value="enable">Turn on</button>{% endif %}</div>
+</form>
+<section class="panel compact-form"><h2>Add it to your website</h2>
+<p class="muted">Paste this one line just before <code>&lt;/body&gt;</code> on every page of your website, or send it to your web designer. It works with WordPress, Wix and hand-built sites.</p>
+<textarea class="invite-link" rows="3" readonly data-select-on-focus aria-label="Website code">{{ snippet }}</textarea>
+<form method="post" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button" name="action" value="new_key">Make a new code</button><small class="muted">Only if the old code was misused; you'll need to update your website.</small></form>
+<p class="muted small-note">WhatsApp: answering on WhatsApp needs a verified Meta (Facebook) business account and a WhatsApp Business number. Ask Kayron when you're ready to set it up.</p></section>
+<section class="panel"><h2>Recent customer chats</h2>
+{% for m in messages %}<article class="chat-log"><small class="muted">{{ m.created_at.strftime('%d %b %Y, %H:%M') }} · {{ m.origin or 'preview' }}</small><p><strong>Customer:</strong> {{ m.question }}</p><p class="preserve"><strong>{{ w.bot_name }}:</strong> {{ m.answer }}</p></article>{% else %}<p class="muted">No chats yet.</p>{% endfor %}</section>
+{% endblock %}

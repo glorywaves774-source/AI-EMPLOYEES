@@ -71,7 +71,7 @@ class DriveTests(unittest.TestCase):
         with self.app.app_context():
             db.create_all()
         self.client.post("/auth/register", data={"full_name": "Ama", "email": "owner@example.com",
-                                                 "business_name": "Accra Logistics", "password": "a-very-strong-password-123"})
+                                                 "business_name": "Accra Logistics", "password": "a-very-strong-password-123", "accept_terms": "yes"})
         with self.app.app_context():
             from app.models import KnowledgeRepository, Tenant
             t = Tenant.query.first()
@@ -209,7 +209,7 @@ class DriveTests(unittest.TestCase):
             db.session.add(u); db.session.flush()
             db.session.add(TenantMembership(user_id=u.id, tenant_id=t.id, role="employee", status="active")); db.session.commit()
         self.client.post("/auth/logout")
-        self.client.post("/auth/login", data={"email": "staff@example.com", "password": "a-very-strong-password-123"})
+        self.client.post("/auth/login", data={"email": "staff@example.com", "password": "a-very-strong-password-123", "accept_terms": "yes"})
         self.assertEqual(self.client.post("/knowledge/integrations/google/connect").status_code, 403)
         self.assertEqual(self.client.post("/knowledge/integrations/google/picker-token").status_code, 403)
         self.assertIn("Ask a workspace Owner or Admin", self.client.get("/knowledge/integrations").get_data(as_text=True))

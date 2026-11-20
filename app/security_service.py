@@ -27,15 +27,33 @@ def consume_token(raw, token_type):
     token.used_at=now(); db.session.flush(); return token
 
 def send_email(to, subject, body):
+    """Plain-text email through the configured SMTP service. Returns False when email isn't set up."""
     host=current_app.config.get("SMTP_HOST")
     if not host: return False
     msg=EmailMessage(); msg["From"]=current_app.config.get("SMTP_FROM") or current_app.config.get("SMTP_USERNAME")
     msg["To"]=to; msg["Subject"]=subject; msg.set_content(body)
-    with smtplib.SMTP(host, current_app.config.get("SMTP_PORT",587), timeout=15) as smtp:
-        if current_app.config.get("SMTP_USE_TLS", True): smtp.starttls()
+    port=int(current_app.config.get("SMTP_PORT",587))
+    if port == 465 or current_app.config.get("SMTP_USE_SSL"):
+        smtp_cm = smtplib.SMTP_SSL(host, port, timeout=15)
+    else:
+        smtp_cm = smtplib.SMTP(host, port, timeout=15)
+    with smtp_cm as smtp:
+        if not isinstance(smtp, smtplib.SMTP_SSL) and current_app.config.get("SMTP_USE_TLS", True): smtp.starttls()
         if current_app.config.get("SMTP_USERNAME"): smtp.login(current_app.config["SMTP_USERNAME"], current_app.config["SMTP_PASSWORD"])
         smtp.send_message(msg)
     return True
+
+
+def notify_by_email(to, subject, body):
+    """Best-effort notification: never breaks the calling workflow."""
+    if not to or not current_app.config.get("SMTP_HOST"):
+        return False
+    try:
+        return send_email(to, subject, body)
+    except Exception:
+        current_app.logger.exception("Notification email failed")
+        return False
+
 
 def setup_mfa(user):
     secret=pyotp.random_base32(); user.mfa_secret=secret; user.mfa_enabled=True
