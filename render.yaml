@@ -37,6 +37,8 @@ services:
           property: connectionString
       - key: OPENAI_API_KEY
         sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
       - key: PUBLIC_BASE_URL
         sync: false
       - key: RATELIMIT_STORAGE_URI
@@ -113,6 +115,8 @@ services:
           name: ai-workforce-redis
           property: connectionString
       - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
         sync: false
       # scripts/production_check.py (run before the worker starts) requires these.
       - key: PUBLIC_BASE_URL

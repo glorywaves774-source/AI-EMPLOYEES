@@ -8,6 +8,7 @@ from flask import current_app
 from .extensions import db
 from .models import AIEmployee, AgentMessage, AgentRun, AuditLog, WorkforceTask
 from .knowledge.services import retrieve_employee_knowledge
+from .ai_providers import AIServiceUnavailable, complete, model_for, provider_order  # noqa: F401
 
 COORDINATOR_TITLE = "Team Coordinator"
 MAX_SPECIALISTS = 4
@@ -86,61 +87,28 @@ def select_specialists(task_text, employees):
 
 
 def _client():
-    api_key = current_app.config.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OpenAI is not configured. Add OPENAI_API_KEY to the server environment.")
-    from openai import OpenAI
-    return OpenAI(api_key=api_key, timeout=90.0, max_retries=2)
+    """OpenAI client (kept for backwards compatibility; providers live in ai_providers)."""
+    from .ai_providers import openai_client
+    return openai_client()
 
 
-class AIServiceUnavailable(RuntimeError):
-    """The AI provider refused for a platform-side reason (no credit, bad key, unknown model).
-
-    Retrying does not help and the client did nothing wrong, so these failures
-    are never retried and never counted against a workspace's allowance.
-    """
-
-
-_PROVIDER_FAULTS = ("insufficient_quota", "credit_balance_exhausted", "billing_hard_limit",
-                    "invalid_api_key", "model_not_found", "account_deactivated")
+def _is_trial(tenant_id):
+    if tenant_id is None:
+        return False
+    from .models import TenantSubscription
+    sub = TenantSubscription.query.filter_by(tenant_id=tenant_id).first()
+    return sub is not None and sub.status == "trialing"
 
 
 def model_for_tenant(tenant_id=None):
-    model = current_app.config.get("OPENAI_MODEL") or "gpt-5.5"
-    trial_model = current_app.config.get("TRIAL_OPENAI_MODEL")
-    if tenant_id is not None and trial_model:
-        from .models import TenantSubscription
-        sub = TenantSubscription.query.filter_by(tenant_id=tenant_id).first()
-        if sub is not None and sub.status == "trialing":
-            return trial_model
-    return model
+    """Model of the preferred provider for this workspace (used for display/logging)."""
+    order = provider_order()
+    return model_for(order[0] if order else "openai", _is_trial(tenant_id))
 
 
 def _call_model(instructions, input_text, tenant_id=None):
-    from .billing.services import AI_SERVICE_UNAVAILABLE
-    client = _client()
-    model = model_for_tenant(tenant_id)
-    try:
-        response = client.responses.create(
-            model=model,
-            instructions=instructions,
-            input=input_text,
-            max_output_tokens=int(current_app.config.get("OPENAI_MAX_OUTPUT_TOKENS") or 3000),
-            store=False,
-        )
-    except Exception as exc:
-        detail = str(exc)
-        if any(code in detail for code in _PROVIDER_FAULTS):
-            current_app.logger.error("AI provider refused the request (platform-side): %s", detail[:300])
-            raise AIServiceUnavailable(
-                f"{AI_SERVICE_UNAVAILABLE}. Kayron has been alerted. This assignment was not counted "
-                "against your allowance; please try again later.") from exc
-        raise
-    output = (getattr(response, "output_text", "") or "").strip()
-    if not output:
-        raise RuntimeError("The AI service returned an empty response.")
-    usage = getattr(response, "usage", None)
-    return output, model, int(getattr(usage, "input_tokens", 0) or 0), int(getattr(usage, "output_tokens", 0) or 0)
+    return complete(instructions, input_text, trial=_is_trial(tenant_id),
+                    max_tokens=current_app.config.get("OPENAI_MAX_OUTPUT_TOKENS") or 3000)
 
 
 def execute_coordinated_task(tenant_id, user_id, title, instructions, existing_task_id=None):

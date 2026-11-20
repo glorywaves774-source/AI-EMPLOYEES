@@ -21,10 +21,12 @@ def validate_environment(environ=None):
     required = [
         "SECRET_KEY", "DATABASE_URL", "FILE_ENCRYPTION_KEY",
         "INTEGRATION_ENCRYPTION_KEY", "PUBLIC_BASE_URL", "RATELIMIT_STORAGE_URI",
-        "REDIS_URL", "OPENAI_API_KEY", "S3_BUCKET", "AWS_REGION",
+        "REDIS_URL", "S3_BUCKET", "AWS_REGION",
     ]
     errors = [f"Missing required production environment variable: {key}"
               for key in required if not env.get(key)]
+    if not (env.get("ANTHROPIC_API_KEY") or env.get("OPENAI_API_KEY")):
+        errors.append("Set ANTHROPIC_API_KEY (Claude) or OPENAI_API_KEY (OpenAI) so AI employees can work.")
     if env.get("ENVIRONMENT", "").lower() != "production":
         errors.append("ENVIRONMENT must be set to production.")
     if len(env.get("SECRET_KEY", "")) < 32:

@@ -22,6 +22,12 @@ class Config:
     PREFERRED_URL_SCHEME = "https"
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
     OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+    # Claude (Anthropic). With AI_PROVIDER=auto, Claude is used first when its key is set and
+    # OpenAI takes over automatically if Claude refuses (e.g. no credit), and vice versa.
+    AI_PROVIDER = os.environ.get("AI_PROVIDER", "auto")
+    ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+    CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
+    TRIAL_CLAUDE_MODEL = os.environ.get("TRIAL_CLAUDE_MODEL", "claude-haiku-5-5")
     HELP_MODEL = os.environ.get("HELP_MODEL")  # Kombian help assistant; defaults to OPENAI_MODEL
     # Google Drive integration (drive.file scope + Google Picker). All four are needed to enable it.
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
