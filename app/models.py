@@ -210,6 +210,57 @@ class WidgetMessage(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False, index=True)
 
 
+class VideoProject(db.Model):
+    """A Video studio job: edit an uploaded video for social media, or generate a clip from a description."""
+    __tablename__ = "video_projects"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    mode = db.Column(db.String(12), nullable=False)               # edit | generate
+    title = db.Column(db.String(180), nullable=False, default="")
+    brief = db.Column(db.String(2000), nullable=False, default="")
+    options_json = db.Column(db.JSON, nullable=False, default=dict)
+    source_key = db.Column(db.String(64))
+    source_filename = db.Column(db.String(200), nullable=False, default="")
+    source_bytes = db.Column(db.BigInteger, nullable=False, default=0)
+    duration_seconds = db.Column(db.Float, nullable=False, default=0)
+    status = db.Column(db.String(20), nullable=False, default="queued", index=True)
+    progress = db.Column(db.String(120), nullable=False, default="")
+    error_message = db.Column(db.String(500), nullable=False, default="")
+    uses_pack = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False, index=True)
+    completed_at = db.Column(db.DateTime(timezone=True))
+
+
+class VideoOutput(db.Model):
+    """A finished video file from a Video studio job; a draft until approved."""
+    __tablename__ = "video_outputs"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("video_projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    platform = db.Column(db.String(20), nullable=False, default="")   # vertical | youtube | generated
+    title = db.Column(db.String(200), nullable=False, default="")
+    post_text = db.Column(db.Text, nullable=False, default="")
+    start_seconds = db.Column(db.Float, nullable=False, default=0)
+    duration_seconds = db.Column(db.Float, nullable=False, default=0)
+    storage_key = db.Column(db.String(64), nullable=False)
+    size_bytes = db.Column(db.BigInteger, nullable=False, default=0)
+    review_status = db.Column(db.String(20), nullable=False, default="pending")
+    reviewed_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at = db.Column(db.DateTime(timezone=True))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class VideoCredit(db.Model):
+    """Extra AI video clips bought as an add-on pack."""
+    __tablename__ = "video_credits"
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    clips = db.Column(db.Integer, nullable=False)
+    payment_id = db.Column(db.Integer, db.ForeignKey("payments.id", ondelete="SET NULL"))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+
+
 class WorkforceTask(db.Model):
     __tablename__ = "workforce_tasks"
     __table_args__ = (

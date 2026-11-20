@@ -18,6 +18,7 @@ WORKSPACE_PAGES = {
     "integrations": ("Integrations", "knowledge.integrations", ALL_MEMBERS, "connect Google Drive and import picked files into a knowledge folder"),
     "analytics": ("Analytics", "analytics.index", MANAGERS, "task, usage and cost figures; CSV export"),
     "billing": ("Billing", "billing.index", ALL_MEMBERS, "plan, usage, payments; Owners/Admins change the plan"),
+    "video": ("Video studio", "video.index", ALL_MEMBERS, "edit videos for TikTok, Reels, Shorts and YouTube, or create AI video clips"),
     "website_chat": ("Website chat", "widget.manage", ADMINS, "set up a customer chatbot for your own website, copy its code, read chats"),
     "team": ("Team", "team.index", ADMINS, "invite colleagues, change their roles or remove access"),
     "security": ("Two-step sign-in", "auth.mfa_setup", ALL_MEMBERS, "turn on authenticator codes for your account"),
@@ -44,7 +45,7 @@ PLATFORM_PAGES = {
     "admin": ("SaaS Administration Centre", "platform.dashboard", frozenset({"platform_admin"}), "plans, prices, businesses, subscriptions, payments, security log"),
 }
 
-NAV_ORDER = ["home", "approvals", "knowledge", "integrations", "website_chat", "analytics", "team", "billing"]
+NAV_ORDER = ["home", "approvals", "knowledge", "video", "integrations", "website_chat", "analytics", "team", "billing"]
 TAB_KEYS = ["home", "approvals", "knowledge", "analytics"]
 
 

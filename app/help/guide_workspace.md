@@ -80,6 +80,18 @@ Every job counts towards the task allowance: **Starter 100**, **Growth 500**, **
 ## Team members
 Owners and Admins open [[page:team]] to invite colleagues by email with a role: **Admin** (everything except data export; only the Owner can invite Admins), **Manager** (assigns work, manages AI employees and documents) or **Employee** (views work and documents). If email isn't set up, you get a link to send by WhatsApp or SMS; it works once, for 7 days. You can change roles or remove people at any time; their past work stays.
 
+## Video studio
+Open [[page:video]] (Owners, Admins and Managers can create; everyone can watch and download).
+**Edit a video for social media**
+1. Upload a video (MP4, MOV, WebM; up to 200 MB and 15 minutes). Talks, interviews, events, tutorials and adverts work best.
+2. Optionally say what to focus on, choose **TikTok, Reels, Shorts** (upright 9:16) and/or **YouTube** (wide 16:9), how many clips (1–5), the longest clip, and whether to add captions.
+3. The AI listens, picks the strongest moments, reframes them (the whole picture stays visible over a blurred background), burns in captions and writes the post text and hashtags.
+4. You get an email when it's done (usually a few minutes). Watch, copy the post text, download the MP4s, and Approve or Reject. Nothing is posted for you. The original upload is deleted once the clips are made.
+Allowance per billing period: free trial 1 edit, Starter 5, Growth 30, Business 150.
+**Create an AI video clip** (Growth and Business plans)
+Describe a scene (e.g. "morning light over a busy Accra market"), choose upright or wide, and the AI creates an 8–10 second clip. No real people's faces, logos, brand names or famous characters. Growth includes 20 clips a month, Business 100; extra packs of 10 clips (GHS 300, paid by Mobile Money or card) are on [[page:billing]] and don't expire monthly.
+Always check captions (names and local words can be misheard) and make sure you have the right to use music and people in your videos.
+
 ## Website chat (customer chatbot)
 Owners and Admins open [[page:website_chat]] to put a chat button on the business's own website:
 1. Give the **Customer Service Officer** access to a knowledge folder with your prices, opening hours, delivery and FAQs (the chatbot answers only from those documents).

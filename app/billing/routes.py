@@ -26,6 +26,19 @@ def _invoice_number():
 def _activate_payment(payment, provider_event=None, period_end=None):
     if payment.status == "paid":
         return
+    if (payment.metadata_json or {}).get("kind") == "video_pack":
+        from app.video.service import add_pack
+        now = datetime.now(timezone.utc)
+        payment.status, payment.paid_at = "paid", now
+        payment.metadata_json = {**(payment.metadata_json or {}), "last_provider_event": provider_event or ""}
+        add_pack(payment)
+        if not Invoice.query.filter_by(invoice_number=payment.invoice_number).first():
+            db.session.add(Invoice(tenant_id=payment.tenant_id, subscription_id=payment.subscription_id,
+                                   invoice_number=payment.invoice_number, amount=payment.amount, currency=payment.currency,
+                                   status="paid", period_start=now, period_end=now, paid_at=now))
+        db.session.add(AuditLog(tenant_id=payment.tenant_id, actor_user_id=None, action="video.pack_paid",
+                                target_type="payment", target_id=str(payment.id), details_json={"provider": payment.provider}))
+        return
     sub = TenantSubscription.query.get(payment.subscription_id) if payment.subscription_id else None
     if not sub:
         return
@@ -146,6 +159,35 @@ def subscribe(plan_id):
     return redirect(url)
 
 
+@billing_bp.post("/video-pack")
+@roles_required("owner", "admin")
+def buy_video_pack():
+    from .services import configured_payment_providers
+    sub = current_subscription(g.active_tenant_id)
+    if not sub or sub.status != "active" or (sub.plan and sub.plan.code not in {"growth", "business"}):
+        flash("Extra AI video clips are available on the Growth and Business plans.", "error")
+        return redirect(url_for("billing.index"))
+    if "paystack" not in {code for code, _ in configured_payment_providers()}:
+        flash("Online payment is being set up. Contact Kayron to buy extra clips.", "error")
+        return redirect(url_for("billing.index"))
+    clips = int(current_app.config.get("VIDEO_PACK_CLIPS") or 10)
+    payment = Payment(tenant_id=g.active_tenant_id, subscription_id=sub.id, provider="paystack",
+                      provider_reference=f"AWV-{uuid.uuid4().hex}", amount=Decimal(str(current_app.config.get("VIDEO_PACK_PRICE") or "300")),
+                      currency=sub.plan.currency if sub.plan else "GHS", status="pending",
+                      invoice_number=f"INV-{datetime.now(timezone.utc):%Y%m%d}-{uuid.uuid4().hex[:8].upper()}",
+                      metadata_json={"kind": "video_pack", "clips": clips})
+    db.session.add(payment)
+    db.session.commit()
+    try:
+        url = initialize_paystack(payment, current_user.email, url_for("billing.paystack_callback", _external=True))
+    except Exception as exc:
+        payment.status = "failed"; payment.metadata_json = {**payment.metadata_json, "error": str(exc)[:500]}
+        db.session.commit()
+        flash(f"Payment could not be started: {str(exc)[:200]}", "error")
+        return redirect(url_for("billing.index"))
+    return redirect(url)
+
+
 @billing_bp.post("/cancel")
 @roles_required("owner", "admin")
 def cancel():
@@ -198,7 +240,10 @@ def paystack_callback():
     if data.get("status") == "success" and data.get("reference") == reference and paystack_amount_matches(payment, data):
         _activate_payment(payment, "paystack.verify")
         db.session.commit()
-        flash("Payment confirmed. Your plan is now active. Thank you!", "success")
+        if (payment.metadata_json or {}).get("kind") == "video_pack":
+            flash(f"Payment confirmed. {payment.metadata_json.get('clips', 10)} extra AI video clips have been added. Thank you!", "success")
+        else:
+            flash("Payment confirmed. Your plan is now active. Thank you!", "success")
     elif data.get("status") in {"failed", "abandoned", "reversed"}:
         payment.status = "failed"; db.session.commit()
         flash("The payment did not go through. No money was taken; please try again.", "error")

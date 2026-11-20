@@ -63,6 +63,15 @@ class Config:
     # Website chat answers per business per UTC day.
     WIDGET_TRIAL_DAILY_LIMIT = int(os.environ.get("WIDGET_TRIAL_DAILY_LIMIT", "100"))
     WIDGET_DAILY_LIMIT = int(os.environ.get("WIDGET_DAILY_LIMIT", "1000"))
+    # Video studio. Google Gemini powers speech-to-text and AI video generation.
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    GEMINI_VIDEO_MODEL = os.environ.get("GEMINI_VIDEO_MODEL", "gemini-omni-1.1-flash")
+    GEMINI_VIDEO_RESOLUTION = os.environ.get("GEMINI_VIDEO_RESOLUTION", "720p")
+    GEMINI_TEXT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
+    VIDEO_MAX_UPLOAD_MB = int(os.environ.get("VIDEO_MAX_UPLOAD_MB", "200"))
+    VIDEO_MAX_MINUTES = int(os.environ.get("VIDEO_MAX_MINUTES", "15"))
+    VIDEO_PACK_CLIPS = int(os.environ.get("VIDEO_PACK_CLIPS", "10"))
+    VIDEO_PACK_PRICE = os.environ.get("VIDEO_PACK_PRICE", "300")
     TRIAL_DAILY_TOKEN_POOL = int(os.environ.get("TRIAL_DAILY_TOKEN_POOL", "2000000"))
     TEAM_EXECUTION_MAX_PARALLELISM = int(os.environ.get("TEAM_EXECUTION_MAX_PARALLELISM", "3"))
     TEAM_EXECUTION_COST_BUDGET_USD = os.environ.get("TEAM_EXECUTION_COST_BUDGET_USD") or None

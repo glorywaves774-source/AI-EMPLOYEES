@@ -115,6 +115,14 @@ def create_app(config_class=Config):
     from .widget import widget_bp
     limiter.limit("20 per minute;400 per day")(widget_bp)
     app.register_blueprint(widget_bp)
+    from .video.routes import video_bp
+    app.register_blueprint(video_bp)
+
+    def _allow_large_video_uploads():
+        # Runs before the CSRF check reads the form, so the video upload gets its own size limit.
+        if request.endpoint == "video.create_edit":
+            request.max_content_length = int(app.config.get("VIDEO_MAX_UPLOAD_MB") or 200) * 1024 * 1024
+    app.before_request_funcs.setdefault(None, []).insert(0, _allow_large_video_uploads)
     app.register_blueprint(legal_bp)
 
     @app.context_processor

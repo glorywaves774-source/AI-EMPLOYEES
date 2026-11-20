@@ -504,3 +504,19 @@ td select { width: auto; margin: 0; padding: 8px 10px; }
 .chat-log { border-top: 1px solid var(--line); padding: 10px 0; }
 .chat-log p { margin: 4px 0; overflow-wrap: anywhere; }
 .inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+.video-stats { margin: 18px 0; }
+.video-options { margin-bottom: 20px; }
+.video-options h2 { font-size: 19px; margin: 0; }
+.video-options input[type=file] { padding: 12px; }
+.video-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none; color: inherit; padding: 12px 0; border-top: 1px solid var(--line); }
+.video-row small { display: block; }
+.video-progress { display: flex; align-items: center; gap: 14px; padding: 18px 20px; margin: 16px 0; }
+.video-progress p { margin: 0; }
+.video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 18px 0; }
+.video-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+.video-card h2 { font-size: 16px; margin: 0; overflow-wrap: anywhere; }
+.video-card video { width: 100%; border-radius: 14px; background: #000; display: block; }
+.video-card video.video-tall { aspect-ratio: 9 / 16; max-height: 520px; object-fit: contain; }
+.video-card video.video-wide { aspect-ratio: 16 / 9; }
+.post-text textarea { font-size: 14px; }
+.primary:disabled, .primary[disabled] { opacity: .45; cursor: not-allowed; filter: grayscale(.4); }
