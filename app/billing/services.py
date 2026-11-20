@@ -286,9 +286,14 @@ def audit_subscription(tenant_id, user_id, action, target_id=None, details=None)
         details_json=details or {},
     ))
 
+def _ua(extra):
+    from app.http_client import headers as _h
+    return _h(extra)
+
+
 def _http_json(url, method="GET", payload=None, headers=None):
     body = json.dumps(payload).encode() if payload is not None else None
-    req = urllib.request.Request(url, data=body, method=method, headers={"Content-Type":"application/json", **(headers or {})})
+    req = urllib.request.Request(url, data=body, method=method, headers=_ua({"Content-Type":"application/json", **(headers or {})}))
     try:
         with urllib.request.urlopen(req, timeout=20) as response:
             return json.loads(response.read().decode())
@@ -387,7 +392,7 @@ def initialize_stripe(payment, customer_email, success_url, cancel_url):
     data = urllib.parse.urlencode(params).encode()
     req = urllib.request.Request(
         "https://api.stripe.com/v1/checkout/sessions", data=data, method="POST",
-        headers={"Authorization": f"Bearer {secret}", "Content-Type":"application/x-www-form-urlencoded"}
+        headers=_ua({"Authorization": f"Bearer {secret}", "Content-Type":"application/x-www-form-urlencoded"})
     )
     try:
         with urllib.request.urlopen(req, timeout=20) as response:

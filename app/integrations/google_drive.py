@@ -58,7 +58,9 @@ def redirect_uri():
 
 def _http(url, data=None, headers=None, method=None, raw=False, limit=None):
     body = urllib.parse.urlencode(data).encode() if isinstance(data, dict) else data
-    req = urllib.request.Request(url, data=body, headers=headers or {}, method=method or ("POST" if body else "GET"))
+    from app.http_client import USER_AGENT
+    req = urllib.request.Request(url, data=body, headers={"User-Agent": USER_AGENT, **(headers or {})},
+                                 method=method or ("POST" if body else "GET"))
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 (fixed https Google endpoints)
             payload = resp.read((limit + 1) if limit else -1)
