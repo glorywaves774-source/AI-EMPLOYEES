@@ -14,7 +14,7 @@
 <div class="task-list">{% for execution in team_reviews %}<article class="panel approval-card"><div class="employee-top"><strong>{{ execution.task.title }}</strong><span class="state state-needs_review">Needs review</span></div><p>{{ execution.error_message or 'The AI Team Coordinator has flagged this deliverable for human review.' }}</p><a class="back-link" href="{{ url_for('workforce.task_detail', task_id=execution.task_id) }}">Open deliverable and review →</a></article>{% else %}<p class="muted">No AI deliverables are waiting for review.</p>{% endfor %}</div>
 <section class="section-head"><div><p class="eyebrow">MANUAL APPROVAL REQUESTS</p><h2>Approval requests</h2></div></section>
 <div class="task-list">{% for item in items %}<article class="panel approval-card">
-<div class="employee-top"><strong>{{ item.action_type }}</strong><span class="state state-{{ item.status }}">{{ item.status }}</span></div>
+<div class="employee-top"><strong>{{ item.action_type }}</strong><span class="state state-{{ item.status }}">{{ item.status|replace('_', ' ') }}</span></div>
 <p>{{ item.description }}</p><small class="muted">Requested {{ item.created_at.strftime('%d %b %Y, %H:%M') }}</small>
 {% if item.status == 'pending' and g.membership.role in ['owner','admin'] %}
 <form method="post" action="{{ url_for('approvals.decide', approval_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Decision note<input name="decision_note" maxlength="1000" placeholder="Reason or conditions (optional)"></label><div class="decision-actions"><button class="primary" name="decision" value="approved">Approve</button><button class="danger" name="decision" value="rejected">Reject</button></div></form>

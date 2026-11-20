@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db, bcrypt
 from app.models import User, Tenant, TenantMembership, AuditLog, Department, AIEmployee, SecurityToken
 from app.billing.services import create_trial_subscription
+from app.workforce.profiles import STARTER_PROFILES
 from app.security_service import issue_token, consume_token, send_email, verify_mfa, setup_mfa, hash_token, as_utc
 from . import auth_bp
 
@@ -41,7 +42,10 @@ def register():
             for n,d in specs: deps[n]=Department(tenant_id=tenant.id,name=n,description=d); db.session.add(deps[n])
             db.session.flush()
             emps=[("AI Executive Assistant","Executive Assistant","Executive Office"),("AI Human Resource Officer","Human Resource Officer","Human Resources"),("AI Accountant","Accountant","Finance"),("AI Marketing Officer","Marketing Officer","Marketing"),("AI Customer Service Officer","Customer Service Officer","Customer Service"),("AI Research Officer","Research Officer","Research"),("AI Project Manager","Project Manager","Projects"),("AI Operations Manager","Operations Manager","Operations"),("AI Software Developer","Software Developer","Technology"),("AI Team Coordinator","Team Coordinator","Executive Office")]
-            for n,t,d in emps: db.session.add(AIEmployee(tenant_id=tenant.id,department_id=deps[d].id,name=n,job_title=t,status="draft",is_system_template=True))
+            # Every new workspace starts its free trial with the whole team switched on and ready to work.
+            for n,t,d in emps:
+                desc,resp,skills=STARTER_PROFILES[t]
+                db.session.add(AIEmployee(tenant_id=tenant.id,department_id=deps[d].id,name=n,job_title=t,description=desc,responsibilities_json=resp,skills_json=skills,status="active",is_system_template=True))
             create_trial_subscription(tenant.id); db.session.add(AuditLog(tenant_id=tenant.id,actor_user_id=user.id,action="tenant.registered",target_type="tenant",target_id=str(tenant.id)))
             token=issue_token(user.id,"email_verification",current_app.config.get("EMAIL_VERIFICATION_HOURS",24)*60); db.session.commit()
             link=f"{(current_app.config.get('PUBLIC_BASE_URL') or request.host_url).rstrip('/')}{url_for('auth.verify_email',token=token)}"

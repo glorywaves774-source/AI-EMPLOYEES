@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 from celery.exceptions import SoftTimeLimitExceeded
 from app.extensions import db
 from app.models import WorkforceTask, AuditLog, Notification
-from app.ai_engine import execute_coordinated_task
+from app.ai_engine import AIServiceUnavailable, execute_coordinated_task
 from app.billing.services import process_subscription_expirations
 
 
 def register_tasks(celery):
-    @celery.task(bind=True, name="workforce.execute_assignment", autoretry_for=(Exception,),
+    @celery.task(bind=True, name="workforce.execute_assignment", autoretry_for=(Exception,), dont_autoretry_for=(AIServiceUnavailable,),
                  retry_backoff=True, retry_jitter=True, retry_kwargs={"max_retries": 2})
     def execute_assignment(self, task_id, tenant_id, user_id, title, instructions):
         task = WorkforceTask.query.filter_by(id=task_id, tenant_id=tenant_id).first()
@@ -57,7 +57,8 @@ def register_tasks(celery):
             db.session.rollback()
             task = WorkforceTask.query.filter_by(id=task_id, tenant_id=tenant_id).first()
             if task:
-                task.status = "queued" if self.request.retries < self.max_retries else "failed"
+                task.status = ("queued" if self.request.retries < self.max_retries
+                               and not isinstance(exc, AIServiceUnavailable) else "failed")
                 task.error_message = str(exc)[:500]
                 if task.status == "failed":
                     task.completed_at = datetime.now(timezone.utc)

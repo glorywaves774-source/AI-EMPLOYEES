@@ -154,8 +154,29 @@ def dashboard():
     payments = Payment.query.order_by(Payment.created_at.desc()).limit(30).all()
     security_events = SecurityEvent.query.order_by(SecurityEvent.created_at.desc()).limit(50).all()
     return render_template("platform/dashboard.html", tenants=tenants, plans=plans, subscriptions=subscriptions,
-                           payments=payments, security_events=security_events,
+                           payments=payments, security_events=security_events, ai_outage=_recent_ai_outage(),
                            platform_name=current_app.config.get("PLATFORM_NAME", "Kayron Global Tech Services"))
+
+
+def _recent_ai_outage():
+    """Most recent platform-side AI refusal (e.g. OpenAI credit exhausted) in the last 24 hours."""
+    from datetime import datetime, timedelta, timezone
+    from app.models import AgentRun
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    faults = ("insufficient_quota", "credit_balance_exhausted", "invalid_api_key", "model_not_found")
+    run = (AgentRun.query.filter(AgentRun.status == "failed", AgentRun.created_at >= since,
+                                 db.or_(*[AgentRun.error_message.like(f"%{f}%") for f in faults]))
+           .order_by(AgentRun.created_at.desc()).first())
+    if not run:
+        return None
+    msg = run.error_message or ""
+    if "invalid_api_key" in msg:
+        reason = "OpenAI rejected the API key. Check OPENAI_API_KEY in Render."
+    elif "model_not_found" in msg:
+        reason = "OpenAI does not recognise the configured model. Check OPENAI_MODEL / TRIAL_OPENAI_MODEL in Render."
+    else:
+        reason = "The OpenAI account has run out of credit. Add credit at platform.openai.com → Settings → Billing."
+    return {"reason": reason, "at": run.created_at}
 
 
 @platform_bp.post("/plans/<int:plan_id>")

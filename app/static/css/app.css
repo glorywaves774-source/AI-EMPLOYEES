@@ -216,6 +216,12 @@ p { margin: 0 0 12px; }
 .dept-card small, .employee-foot small { color: var(--faint); font-size: 13.5px; }
 .employee-top, .employee-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .employee-foot { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 16px; }
+.employee-edit { margin-top: 12px; }
+.employee-edit summary { cursor: pointer; color: var(--accent, var(--brand)); font-weight: 600; font-size: 14px; padding: 6px 0; min-height: 32px; }
+.employee-edit summary:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 6px; }
+.employee-edit form { display: grid; gap: 4px; margin-top: 6px; }
+.employee-edit label { margin: 8px 0; }
+.employee-edit button { justify-self: start; }
 .employee-foot select { width: auto; min-width: 120px; margin: 0; padding: 8px 10px; font-size: 14px; }
 .avatar { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; font-size: 20px; color: var(--brand); background: var(--neu-bg); box-shadow: 3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light); }
 .job-title { color: var(--brand) !important; font-weight: 600; margin-top: 0; }

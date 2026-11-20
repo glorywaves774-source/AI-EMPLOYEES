@@ -6,7 +6,7 @@ from app.extensions import db
 from app.models import TenantMembership, Department, AIEmployee, AuditLog, WorkforceTask
 from app.security import active_membership_required, roles_required
 from . import workspace_bp
-from app.billing.services import can_activate_employee
+from app.billing.services import trial_summary, can_activate_employee
 
 @workspace_bp.before_request
 def load_tenant_context():
@@ -39,7 +39,8 @@ def dashboard():
     recent_tasks = WorkforceTask.query.filter_by(tenant_id=g.active_tenant_id).order_by(WorkforceTask.created_at.desc()).limit(8).all()
     return render_template("workspace/dashboard.html", tenant=g.active_tenant,
         departments=departments, employees=employees, recent_tasks=recent_tasks,
-        active_count=sum(1 for e in employees if e.status == "active"))
+        active_count=sum(1 for e in employees if e.status == "active"),
+        trial=trial_summary(g.active_tenant_id))
 
 @workspace_bp.post("/departments")
 @roles_required("owner", "admin", "manager")
@@ -83,6 +84,34 @@ def create_employee():
         action="ai_employee.created", target_type="ai_employee", target_id=str(employee.id)))
     db.session.commit()
     flash("AI employee created as a draft. Configure and test it before activation.", "success")
+    return redirect(url_for("workspace.dashboard"))
+
+@workspace_bp.post("/employees/<int:employee_id>/edit")
+@roles_required("owner", "admin", "manager")
+def edit_employee(employee_id):
+    employee = AIEmployee.query.filter_by(id=employee_id, tenant_id=g.active_tenant_id).first_or_404()
+    name = request.form.get("name", "").strip()
+    title = request.form.get("job_title", "").strip()
+    description = request.form.get("description", "").strip()
+    department_id = request.form.get("department_id", type=int)
+    department = Department.query.filter_by(id=department_id, tenant_id=g.active_tenant_id).first() if department_id else None
+    if not name or not title or len(name) > 120 or len(title) > 120 or len(description) > 1000:
+        flash("Enter a valid employee name and job title.", "error")
+        return redirect(url_for("workspace.dashboard"))
+    if department_id and not department:
+        abort(400)
+    changes = {}
+    for field, value in (("name", name), ("job_title", title), ("description", description),
+                         ("department_id", department.id if department else None)):
+        if getattr(employee, field) != value:
+            changes[field] = {"from": getattr(employee, field), "to": value}
+            setattr(employee, field, value)
+    if changes:
+        db.session.add(AuditLog(tenant_id=g.active_tenant_id, actor_user_id=current_user.id,
+            action="ai_employee.updated", target_type="ai_employee", target_id=str(employee.id),
+            details_json=changes))
+        db.session.commit()
+        flash(f"{employee.name} has been updated.", "success")
     return redirect(url_for("workspace.dashboard"))
 
 @workspace_bp.post("/employees/<int:employee_id>/status")
