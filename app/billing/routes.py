@@ -5,7 +5,7 @@ import uuid
 from decimal import Decimal
 from flask import flash, g, make_response, redirect, render_template, request, url_for, current_app, abort
 from flask_login import current_user, login_required
-from app.extensions import db
+from app.extensions import csrf, db
 from app.billing.services import configured_payment_providers
 from app.models import SubscriptionPlan, TenantSubscription, SubscriptionChangeRequest, Payment, Invoice, AuditLog
 from app.security import roles_required
@@ -252,6 +252,7 @@ def paystack_callback():
     return redirect(url_for("billing.index"))
 
 @billing_bp.post("/webhooks/paystack")
+@csrf.exempt  # server-to-server: authenticated by Paystack's HMAC signature instead of a CSRF token
 def paystack_webhook():
     raw = request.get_data()
     if not verify_paystack_signature(raw, request.headers.get("X-Paystack-Signature")):
@@ -294,6 +295,7 @@ def stripe_success():
     return redirect(url_for("billing.index"))
 
 @billing_bp.post("/webhooks/stripe")
+@csrf.exempt  # server-to-server: authenticated by Stripe's signature instead of a CSRF token
 def stripe_webhook():
     secret = current_app.config.get("STRIPE_WEBHOOK_SECRET")
     signature = request.headers.get("Stripe-Signature", "")
