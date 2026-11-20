@@ -30,6 +30,7 @@ Page references are written like [[page:admin]]. The platform owner manages ever
 - Models: paying businesses use CLAUDE_MODEL (default claude-sonnet-5-5); free trials use TRIAL_CLAUDE_MODEL (default claude-haiku-5-5). OpenAI uses OPENAI_MODEL / TRIAL_OPENAI_MODEL.
 - Claude credit: platform.claude.com → Settings → Billing. OpenAI credit: platform.openai.com → Settings → Billing. Turn on auto-reload on both.
 - Kombian uses the same providers.
+- Charts, presentations and design graphics use the same providers. Photo-style images use OpenAI's image model (OPENAI_IMAGE_MODEL, default gpt-image-2.5-flare; OPENAI_IMAGE_SIZE default 1024x1024) and need OPENAI_API_KEY. Daily limits: TRIAL_DAILY_VISUAL_LIMIT (5) and VISUALS_DAILY_LIMIT (40).
 
 ## Subscription statuses
 - **trialing** — free 14-day trial from sign-up

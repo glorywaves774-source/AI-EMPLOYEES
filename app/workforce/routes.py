@@ -4,7 +4,7 @@ from app.extensions import db
 from app.models import WorkforceTask, AgentRun, AuditLog, TeamExecution, TeamExecutionStep, Notification
 from app.security import roles_required, active_membership_required
 from app.models import AIEmployee
-from app.billing.services import can_create_task
+from app.billing.services import can_create_task, can_create_visual
 from flask import current_app
 from . import workforce_bp
 
@@ -50,7 +50,12 @@ def task_detail(task_id):
     runs = AgentRun.query.filter_by(task_id=task.id, tenant_id=g.active_tenant_id).order_by(AgentRun.created_at.asc()).all()
     execution = TeamExecution.query.filter_by(task_id=task.id, tenant_id=g.active_tenant_id).first()
     steps = TeamExecutionStep.query.filter_by(team_execution_id=execution.id, tenant_id=g.active_tenant_id).order_by(TeamExecutionStep.id.asc()).all() if execution else []
-    return render_template("workforce/task_detail.html", task=task, runs=runs, execution=execution, steps=steps)
+    from app.models import GeneratedAsset
+    assets = GeneratedAsset.query.filter_by(task_id=task.id, tenant_id=g.active_tenant_id).order_by(GeneratedAsset.id.asc()).all()
+    photo_available = bool(current_app.config.get("OPENAI_API_KEY"))
+    return render_template("workforce/task_detail.html", task=task, runs=runs, execution=execution, steps=steps,
+                           assets=assets, photo_available=photo_available,
+                           assets_pending=any(a.status in ("queued", "running") for a in assets))
 
 
 @workforce_bp.post("/tasks/<int:task_id>/cancel")
@@ -170,3 +175,84 @@ def retry_failed_team_steps(task_id):
         return redirect(url_for("workforce.task_detail", task_id=task.id))
     flash(f"Recovery queued for {len(retry_keys)} failed specialist step(s). Completed contributions were preserved.", "success")
     return redirect(url_for("workforce.task_detail", task_id=task.id))
+
+
+# ---------------------------------------------------------------- charts, presentations, graphics
+VISUAL_KINDS = {"chart", "presentation", "graphic"}
+
+
+@workforce_bp.post("/tasks/<int:task_id>/visuals")
+@roles_required("owner", "admin", "manager")
+def create_visual(task_id):
+    from app.models import GeneratedAsset
+    task = WorkforceTask.query.filter_by(id=task_id, tenant_id=g.active_tenant_id).first_or_404()
+    kind = request.form.get("kind", "")
+    style = request.form.get("style", "design") if kind == "graphic" else ""
+    brief = request.form.get("brief", "").strip()[:1000]
+    if kind not in VISUAL_KINDS or style not in {"", "design", "photo"}:
+        abort(400)
+    back = redirect(url_for("workforce.task_detail", task_id=task.id) + "#visuals")
+    if task.status != "completed" or not task.final_output:
+        flash("Charts, presentations and graphics can be made once the assignment is completed.", "error")
+        return back
+    if style == "photo" and not current_app.config.get("OPENAI_API_KEY"):
+        flash("Photo-style images need OpenAI, which isn't set up. Choose a design graphic instead.", "error")
+        return back
+    allowed, message = can_create_visual(g.active_tenant_id)
+    if not allowed:
+        flash(message, "error")
+        return back
+    asset = GeneratedAsset(tenant_id=g.active_tenant_id, task_id=task.id, kind=kind, style=style, brief=brief,
+                           created_by_user_id=current_user.id, status="queued")
+    db.session.add(asset)
+    db.session.flush()
+    db.session.add(AuditLog(tenant_id=g.active_tenant_id, actor_user_id=current_user.id, action="visual.requested",
+                            target_type="generated_asset", target_id=str(asset.id), details_json={"kind": kind, "style": style}))
+    db.session.commit()
+    try:
+        current_app.extensions["celery"].send_task("visuals.generate_asset", args=[g.active_tenant_id, asset.id])
+    except Exception:
+        asset.status, asset.error_message = "failed", "The background queue is unavailable. Please try again later."
+        db.session.commit()
+        flash("The background queue is unavailable. Please try again later.", "error")
+        return back
+    label = {"chart": "Charts are", "presentation": "Your presentation is", "graphic": "Your graphic is"}[kind]
+    flash(f"{label} being made. This usually takes under a minute; refresh this page to see it.", "success")
+    return back
+
+
+@workforce_bp.get("/visuals/<int:asset_id>/file")
+@login_required
+@active_membership_required
+def visual_file(asset_id):
+    from flask import Response
+    from app.models import GeneratedAsset
+    from app.knowledge.storage import read_file
+    asset = GeneratedAsset.query.filter_by(id=asset_id, tenant_id=g.active_tenant_id, status="ready").first_or_404()
+    data = read_file(asset.storage_key)
+    download = request.args.get("download") == "1" or not asset.mime_type.startswith("image/")
+    response = Response(data, mimetype=asset.mime_type)
+    response.headers["Content-Disposition"] = ("attachment" if download else "inline") + f'; filename="{asset.filename}"'
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "private, no-store"
+    # SVGs are sanitised already; this blocks scripts even if one slipped through.
+    response.headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox"
+    return response
+
+
+@workforce_bp.post("/visuals/<int:asset_id>/review")
+@roles_required("owner", "admin")
+def review_visual(asset_id):
+    from datetime import datetime, timezone
+    from app.models import GeneratedAsset
+    asset = GeneratedAsset.query.filter_by(id=asset_id, tenant_id=g.active_tenant_id, status="ready").first_or_404()
+    decision = request.form.get("decision")
+    if decision not in {"approved", "rejected"}:
+        abort(400)
+    asset.review_status, asset.reviewed_by_user_id = decision, current_user.id
+    asset.reviewed_at = datetime.now(timezone.utc)
+    db.session.add(AuditLog(tenant_id=g.active_tenant_id, actor_user_id=current_user.id, action=f"visual.{decision}",
+                            target_type="generated_asset", target_id=str(asset.id)))
+    db.session.commit()
+    flash(f"{asset.title} {decision}. This records a decision only; nothing is published.", "success")
+    return redirect(url_for("workforce.task_detail", task_id=asset.task_id) + "#visuals")
